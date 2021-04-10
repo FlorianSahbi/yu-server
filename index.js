@@ -12,12 +12,15 @@ db.once('open', () => {
 const songsSchema = new mongoose.Schema({
   title: String,
   url: String,
-  cover: String
+  cover: String,
+  correctWords: [String],
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 });
 
 const usersSchema = new mongoose.Schema({
   username: String,
   avatar: String,
+  songs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Song' }],
 });
 
 const playlistsSchema = new mongoose.Schema({
@@ -36,12 +39,15 @@ const typeDefs = gql`
     title: String
     url: String
     cover: String
+    correctWords: [String]
+    user: User,
   }
 
   type User {
     _id: ID
     username: String
     avatar: String
+    songs: [Song]
   }
 
   type Playlist {
@@ -63,7 +69,7 @@ const typeDefs = gql`
   }
 
   type Mutation {
-    addSong(title: String, url: String, cover: String): Song
+    addSong(title: String, url: String, cover: String, user:ID correctWords: [String]): Song
     deleteSong(id: ID): Song
     updateSong(id: ID, title: String, url: String, cover: String): Song
 
@@ -80,11 +86,11 @@ const typeDefs = gql`
 const resolvers = {
   Query: {
     async songs() {
-      const songs = await Song.find().exec();
+      const songs = await Song.find().populate('user').exec();
       return songs;
     },
     async song(parent, { id }, context, info) {
-      const song = await Song.findById(id).exec();
+      const song = await Song.findById(id).populate('user').exec();
       return song;
     },
     async playlists() {
@@ -105,8 +111,8 @@ const resolvers = {
     },
   },
   Mutation: {
-    async addSong(parent, { title, url, cover }, context, info) {
-      const newSong = await Song.create({ title, url, cover });
+    async addSong(parent, { title, url, cover, user, correctWords }, context, info) {
+      const newSong = await Song.create({ title, url, cover, user, correctWords });
       return newSong;
     },
     async deleteSong(parent, { id }, context, info) {
@@ -114,7 +120,7 @@ const resolvers = {
       return deletedSong;
     },
     async updateSong(parent, { id, title, cover, url }, context, info) {
-      const updatedSong = await Song.findByIdAndUpdate(id, { title, cover, url }, { new: true });
+      const updatedSong = await Song.findByIdAndUpdate(id, { title, cover, url }, { new: true }).populate('user').exec();
       return updatedSong;
     },
 
