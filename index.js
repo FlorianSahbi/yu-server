@@ -127,7 +127,7 @@ const resolvers = {
       return deletedPlaylist;
     },
     async updatePlaylist(parent, { id, name, thumbnail, songs }, context, info) {
-      const updatedPlaylist = await Playlist.findByIdAndUpdate(id, { name, thumbnail, songs });
+      const updatedPlaylist = await Playlist.findByIdAndUpdate(id, { name, thumbnail, songs }).populate('songs').exec();
       return updatedPlaylist;
     },
 
@@ -148,6 +148,6 @@ const resolvers = {
 
 const server = new ApolloServer({ typeDefs, resolvers });
 
-server.listen().then(({ url }) => {
+server.listen({ port: process.env.PORT || 4000 }).then(({ url }) => {
   console.log(`🚀  Server ready at ${url}`);
 });
