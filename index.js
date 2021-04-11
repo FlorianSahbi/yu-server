@@ -71,7 +71,7 @@ const typeDefs = gql`
   type Mutation {
     addSong(title: String, url: String, cover: String, user:ID correctWords: [String]): Song
     deleteSong(id: ID): Song
-    updateSong(id: ID, title: String, url: String, cover: String): Song
+    updateSong(id: ID, title: String, url: String, cover: String, user: ID, correctWords: [String]): Song
 
     addPlaylist(name: String, thumbnail: String, songs: [ID]): Playlist
     deletePlaylist(id: ID): Playlist
@@ -119,8 +119,8 @@ const resolvers = {
       const deletedSong = await Song.findByIdAndDelete(id);
       return deletedSong;
     },
-    async updateSong(parent, { id, title, cover, url }, context, info) {
-      const updatedSong = await Song.findByIdAndUpdate(id, { title, cover, url }, { new: true }).populate('user').exec();
+    async updateSong(parent, { id, title, cover, url, correctWords, user }, context, info) {
+      const updatedSong = await Song.findByIdAndUpdate(id, { title, cover, url, correctWords, user }, { new: true }).populate('user').exec();
       return updatedSong;
     },
 
