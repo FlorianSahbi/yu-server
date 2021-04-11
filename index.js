@@ -15,19 +15,19 @@ const songsSchema = new mongoose.Schema({
   cover: String,
   correctWords: [String],
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-});
+}, { timestamps: true });
 
 const usersSchema = new mongoose.Schema({
   username: String,
   avatar: String,
   songs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Song' }],
-});
+}, { timestamps: true });
 
 const playlistsSchema = new mongoose.Schema({
   name: String,
   thumbnail: String,
   songs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Song' }],
-});
+}, { timestamps: true });
 
 const Song = mongoose.model('Song', songsSchema);
 const User = mongoose.model('User', usersSchema);
