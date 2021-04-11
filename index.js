@@ -94,11 +94,11 @@ const resolvers = {
       return song;
     },
     async playlists() {
-      const playlists = await Playlist.find().populate('songs').exec();
+      const playlists = await Playlist.find().populate('songs').populate('user').exec();
       return playlists;
     },
     async playlist(parent, { id }, context, info) {
-      const playlist = await Playlist.findById(id).populate('songs').exec();
+      const playlist = await Playlist.findById(id).populate('songs').populate('user').exec();
       return playlist;
     },
     async users() {
