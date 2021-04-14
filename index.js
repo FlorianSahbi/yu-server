@@ -138,6 +138,21 @@ const typeDefs = gql`
       correctWords: [String]
       ): Song
 
+      addTag(
+      name: String,
+      cover: String,
+      ): Song
+
+    deleteTag(
+      id: ID
+      ): Song
+
+    updateTag(
+      id: ID, 
+      name: String, 
+      cover: String, 
+      ): Song
+
     addPlaylist(
       name: String, 
       thumbnail: String,
@@ -247,8 +262,28 @@ const resolvers = {
           .findByIdAndUpdate(id, {
             title, cover, url, correctWords, user,
           }, {new: true})
-          .populate('user').exec();
+          .populate('user')
+          .exec();
       return updatedSong;
+    },
+
+    async addTag(_, {name, cover}) {
+      const newTag = await Tag
+          .create({name, cover});
+      return newTag;
+    },
+    async deleteTag(_, {id}) {
+      const deleteTag = await Tag
+          .findByIdAndDelete(id);
+      return deleteTag;
+    },
+    async updateTag(_, {id, name, cover}) {
+      const updatedTag = await Tag
+          .findByIdAndUpdate(id, {
+            id, name, cover,
+          }, {new: true})
+          .exec();
+      return updatedTag;
     },
 
     async addPlaylist(parent, {name, thumbnail, songs}) {
