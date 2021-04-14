@@ -123,6 +123,7 @@ const typeDefs = gql`
       cover: String,
       user:ID,
       correctWords: [String]
+      tags: [Tag]
     ): Song
 
     deleteSong(
@@ -136,6 +137,7 @@ const typeDefs = gql`
       cover: String, 
       user: ID, 
       correctWords: [String]
+      tags: [Tag]
     ): Song
 
     addTag(
@@ -194,6 +196,7 @@ const resolvers = {
       const songs = await Song
           .find()
           .populate('user')
+          .populate('tags')
           .sort({updatedAt: 'desc'})
           .exec();
       return songs;
@@ -202,6 +205,7 @@ const resolvers = {
       const song = await Song
           .findById(id)
           .populate('user')
+          .populate('tags')
           .exec();
       return song;
     },
@@ -247,9 +251,9 @@ const resolvers = {
     },
   },
   Mutation: {
-    async addSong(_, {title, url, cover, user, correctWords}) {
+    async addSong(_, {title, url, cover, user, correctWords, tags}) {
       const newSong = await Song
-          .create({title, url, cover, user, correctWords});
+          .create({title, url, cover, user, correctWords, tags});
       return newSong;
     },
     async deleteSong(_, {id}) {
@@ -257,12 +261,13 @@ const resolvers = {
           .findByIdAndDelete(id);
       return deletedSong;
     },
-    async updateSong(_, {id, title, cover, url, correctWords, user}) {
+    async updateSong(_, {id, title, cover, url, correctWords, user, tags}) {
       const updatedSong = await Song
           .findByIdAndUpdate(id, {
-            title, cover, url, correctWords, user,
+            title, cover, url, correctWords, user, tags,
           }, {new: true})
           .populate('user')
+          .populate('tags')
           .exec();
       return updatedSong;
     },
