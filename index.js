@@ -123,11 +123,11 @@ const typeDefs = gql`
       cover: String,
       user:ID,
       correctWords: [String]
-      ): Song
+    ): Song
 
     deleteSong(
       id: ID
-      ): Song
+    ): Song
 
     updateSong(
       id: ID, 
@@ -136,53 +136,53 @@ const typeDefs = gql`
       cover: String, 
       user: ID, 
       correctWords: [String]
-      ): Song
+    ): Song
 
-      addTag(
+    addTag(
       name: String,
       cover: String,
-      ): Song
+    ): Tag
 
     deleteTag(
       id: ID
-      ): Song
+    ): Tag
 
     updateTag(
       id: ID, 
       name: String, 
       cover: String, 
-      ): Song
+    ): Tag
 
     addPlaylist(
       name: String, 
       thumbnail: String,
       songs: [ID]
-      ): Playlist
+    ): Playlist
 
     deletePlaylist(
       id: ID
-      ): Playlist
+    ): Playlist
 
     updatePlaylist(
       id: ID, 
       name: String, 
       thumbnail: String,
       songs: [ID]
-      ): Playlist
+    ): Playlist
 
     addUser(username: String,
-     avatar: String
-     ): User
+      avatar: String
+    ): User
 
     deleteUser(
       id: ID
-      ): User
+    ): User
 
     updateUser(
       id: ID,
       username: String, 
       avatar: String
-     ): User
+    ): User
 }
 `;
 
