@@ -13,6 +13,7 @@ db.once('open', () => {
 
 const tagsSchema = new mongoose.Schema({
   name: String,
+  cover: String,
   songs: [{type: mongoose.Schema.Types.ObjectId, ref: 'Song'}],
 }, {timestamps: true});
 
@@ -41,28 +42,6 @@ const Song = mongoose.model('Song', songsSchema);
 const User = mongoose.model('User', usersSchema);
 const Playlist = mongoose.model('Playlist', playlistsSchema);
 const Tag = mongoose.model('Tag', tagsSchema);
-
-
-async function getSongsByTags(tags) {
-  const songs = await Song
-      .find( {'tags': tags} )
-      .populate('tags')
-      .exec();
-  console.log(songs);
-}
-
-
-// 2011 : 6076185f91df9d9d07e66ed8  // 1
-// anime : 6076183a91df9d9d07e66ed7 // 3
-// bepop : 6076180091df9d9d07e66ed6 // 1
-
-// madoka : 60761a7e25616200229041ee
-// digimon : 60761a3025616200229041ed
-// bebop : 6076199825616200229041ec
-
-// getSongsByTags('6076185f91df9d9d07e66ed8');
-// getSongsByTags('6076183a91df9d9d07e66ed7');
-// getSongsByTags('6076180091df9d9d07e66ed6');
 
 const dateScalar = new GraphQLScalarType({
   name: 'Date',
@@ -98,7 +77,8 @@ const typeDefs = gql`
 
   type Tag {
     _id: ID
-    name: ID
+    name: String
+    cover: String
     songs: [Song]
     createdAt: Date
     updatedAt: Date
