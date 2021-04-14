@@ -121,9 +121,9 @@ const typeDefs = gql`
       title: String,
       url: String,
       cover: String,
-      user:ID,
-      correctWords: [String]
-      tags: [Tag]
+      user: ID,
+      correctWords: [String],
+      tags: [ID]
     ): Song
 
     deleteSong(
@@ -133,16 +133,16 @@ const typeDefs = gql`
     updateSong(
       id: ID, 
       title: String, 
-      url: String, 
       cover: String, 
+      url: String, 
+      correctWords: [String],
       user: ID, 
-      correctWords: [String]
-      tags: [Tag]
+      tags: [ID]
     ): Song
 
     addTag(
       name: String,
-      cover: String,
+      cover: String
     ): Tag
 
     deleteTag(
@@ -152,7 +152,7 @@ const typeDefs = gql`
     updateTag(
       id: ID, 
       name: String, 
-      cover: String, 
+      cover: String
     ): Tag
 
     addPlaylist(
@@ -209,6 +209,7 @@ const resolvers = {
           .exec();
       return song;
     },
+
     async tags() {
       const tags = await Tag
           .find()
@@ -221,6 +222,7 @@ const resolvers = {
           .exec();
       return tag;
     },
+
     async playlists() {
       const playlists = await Playlist
           .find()
@@ -236,6 +238,7 @@ const resolvers = {
           .exec();
       return playlist;
     },
+
     async users() {
       const users = await User
           .find()
