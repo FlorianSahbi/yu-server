@@ -1,7 +1,9 @@
+/* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 const {ApolloServer, gql} = require('apollo-server');
 const mongoose = require('mongoose');
 const {GraphQLScalarType, Kind} = require('graphql');
+const ytdl = require('ytdl-core');
 
 const uri = 'mongodb+srv://admin:admin@blind-test.bx9rj.mongodb.net/blind_test?retryWrites=true&w=majority';
 mongoose.connect(uri, {useNewUrlParser: true, useUnifiedTopology: true});
@@ -33,6 +35,7 @@ const songsSchema = new mongoose.Schema({
   title: String,
   url: String,
   cover: String,
+  isAccepted: {type: Boolean, default: false},
   correctWords: [String],
   user: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
   tags: [{type: mongoose.Schema.Types.ObjectId, ref: 'Tag'}],
@@ -63,6 +66,11 @@ const dateScalar = new GraphQLScalarType({
 const typeDefs = gql`
   scalar Date
 
+  type YouTubeData {
+    cover: String
+    title: String
+  }
+
   type Song {
     _id: ID
     title: String
@@ -71,6 +79,7 @@ const typeDefs = gql`
     correctWords: [String]
     user: User
     tags: [Tag]
+    isAccepted: Boolean
     createdAt: Date
     updatedAt: Date
   }
@@ -114,9 +123,17 @@ const typeDefs = gql`
 
     tag(id: ID): Tag
     tags: [Tag]
+
+    getSongData(
+      url: String
+    ): YouTubeData
   }
 
   type Mutation {
+    acceptSong(
+      id: ID
+    ): Song
+
     addSong(
       title: String,
       url: String,
@@ -191,6 +208,12 @@ const typeDefs = gql`
 const resolvers = {
   Date: dateScalar,
   Query: {
+    async getSongData(_, {url}) {
+      const data = await ytdl.getInfo(url);
+      const cover = data.player_response.videoDetails.thumbnail.thumbnails.filter((t) => t.height > 720).map((t) => t.url)[0];
+      const title = data.player_response.videoDetails.title;
+      return {title, cover};
+    },
     async songs(_, {tag}) {
       console.log(tag);
       const songs = await Song
@@ -254,10 +277,21 @@ const resolvers = {
     },
   },
   Mutation: {
+    async acceptSong(_, {id}) {
+      const updatedSong = await Song
+          .findByIdAndUpdate(id, {
+            isAccepted: true,
+          }, {new: true})
+          .populate('user')
+          .populate('tags')
+          .exec();
+      return updatedSong;
+    },
+
     async addSong(_, {title, url, cover, user, correctWords, tags}) {
       const newSong = await Song
           .create({title, url, cover, user, correctWords, tags});
-      return newSong;
+      return await newSong.populate('tags').populate('user').execPopulate();
     },
     async deleteSong(_, {id}) {
       const deletedSong = await Song
