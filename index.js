@@ -2,6 +2,7 @@
 /* eslint-disable require-jsdoc */
 const {ApolloServer, gql} = require('apollo-server');
 const mongoose = require('mongoose');
+const mongoosePaginate = require('mongoose-paginate-v2');
 const {GraphQLScalarType, Kind} = require('graphql');
 const ytdl = require('ytdl-core');
 
@@ -18,6 +19,7 @@ const tagsSchema = new mongoose.Schema({
   cover: String,
   songs: [{type: mongoose.Schema.Types.ObjectId, ref: 'Song'}],
 }, {timestamps: true});
+tagsSchema.plugin(mongoosePaginate);
 
 const usersSchema = new mongoose.Schema({
   username: String,
@@ -93,6 +95,21 @@ const typeDefs = gql`
     updatedAt: Date
   }
 
+  type TagConnection {
+    docs: [Tag]
+    totalDocs: Int
+    limit: Int
+    totalPages: Int
+    page: Int
+    pagingCounter: Int
+    hasPrevPage: Boolean
+    hasNextPage: Boolean
+    prevPage: Int,
+    nextPage: Int
+  }
+
+  
+
   type User {
     _id: ID
     username: String
@@ -122,7 +139,11 @@ const typeDefs = gql`
     users: [User]
 
     tag(id: ID): Tag
-    tags: [Tag]
+    
+    tags(
+      limit: Int,
+      page: Int
+    ): TagConnection
 
     getSongData(
       url: String
@@ -215,7 +236,6 @@ const resolvers = {
       return {title, cover};
     },
     async songs(_, {tag}) {
-      console.log(tag);
       const songs = await Song
           .find()
           .populate('user')
@@ -233,10 +253,29 @@ const resolvers = {
       return song;
     },
 
-    async tags() {
+    async tags(_, {page, limit}) {
+      let options = [];
+
+      if (limit === 0) {
+        options = {
+          page: 1,
+          limit: 0,
+        };
+      } else if (page && limit) {
+        options = {
+          page,
+          limit,
+        };
+      } else {
+        options = {
+          pagination: false,
+        };
+      }
+      // const tags = await Tag
+      //     .find()
+      //     .exec();
       const tags = await Tag
-          .find()
-          .exec();
+          .paginate({}, options);
       return tags;
     },
     async tag(_, {id}) {
