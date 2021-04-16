@@ -236,8 +236,9 @@ const resolvers = {
       return {title, cover};
     },
     async songs(_, {tag}) {
+      console.log(tag);
       const songs = await Song
-          .find()
+          .find(tag? {tags: tag}: {})
           .populate('user')
           .populate('tags')
           .sort({updatedAt: 'desc'})
