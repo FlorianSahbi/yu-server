@@ -35,7 +35,6 @@ const resolvers = {
       return {title, cover};
     },
     async songs(_, {tag}) {
-      console.log(tag);
       const songs = await Song
           .find(tag ? {tags: tag} : {})
           .populate('user')
@@ -50,7 +49,7 @@ const resolvers = {
         const rSong = await Song.find({tags: tag}).exec();
         return rSong[getRandomIntInclusive(0, counter - 1)];
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     },
     async song(_, {id}) {
@@ -66,6 +65,8 @@ const resolvers = {
           .find()
           .populate('players')
           .populate('tags')
+          .populate('history.song')
+          .populate('history.rank.player')
           .exec();
       return games;
     },
@@ -75,6 +76,7 @@ const resolvers = {
           .populate('players')
           .populate('tags')
           .populate('history.song')
+          .populate('history.rank.player')
           .exec();
       return game;
     },
@@ -167,17 +169,15 @@ const resolvers = {
           .exec();
       return updatedSong;
     },
-    async addGame(_, {players, tags}) {
-      const newGame = await Game
-          .create({players, tags});
-      return await newGame.populate('tags').populate('players').execPopulate();
+    async addGame() {
+      const newGame = await Game.create({});
+      return newGame;
     },
-    async updateGame(_, {id, players, tags}) {
+    async updateGameAddPlayers(_, {id, players}) {
       try {
-        console.log({id, players, tags});
         const updatedGame = await Game
             .findByIdAndUpdate(id, {
-              players, tags,
+              $addToSet: {players},
             }, {new: true})
             .populate('players')
             .populate('tags')
@@ -185,16 +185,14 @@ const resolvers = {
             .exec();
         return updatedGame;
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     },
-    async updateGameAddRound(_, {id, positionRound, song}) {
+    async updateGameAddTags(_, {id, tags}) {
       try {
-        console.log({id, positionRound, song});
-        const round = {song, position: positionRound, rank: []};
         const updatedGame = await Game
             .findByIdAndUpdate(id, {
-              $push: {history: [round]},
+              $addToSet: {tags},
             }, {new: true})
             .populate('players')
             .populate('tags')
@@ -202,7 +200,51 @@ const resolvers = {
             .exec();
         return updatedGame;
       } catch (error) {
-        console.log(error);
+        console.error(error);
+      }
+    },
+    async updateGameAddRound(_, {id, position, song}) {
+      try {
+        const round = {song, position, rank: []};
+        const updatedGame = await Game
+            .findByIdAndUpdate(id, {
+              $addToSet: {history: round},
+            }, {new: true})
+            .populate('players')
+            .populate('tags')
+            .populate('history.song')
+            .exec();
+        return updatedGame;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    async updateGameAddRank(_, {id, position, player, points}) {
+      try {
+        const res = await Game.findById(id).exec();
+        const rank = {position, player, points};
+        console.log({position, player, points});
+        res.history[0].rank.addToSet(rank);
+        console.log(res);
+        console.log(res.history[0].rank);
+        const result = await res.save();
+        console.log(result);
+        // const rank = {position, user, points};
+        // console.log(rank);
+        // const updatedGame = await Game
+        //     .findByIdAndUpdate(id, {
+        //       $push: {'history[0].rank': rank},
+        //     }, {new: true})
+        //     .populate('players')
+        //     .populate('tags')
+        //     .populate('history.song')
+        //     .populate('history.rank.player')
+        //     .exec();
+        // console.log(updatedGame.history[0].rank.push(rank));
+        // console.log(updatedGame.history[0]);
+        // return updatedGame;
+      } catch (error) {
+        console.error(error);
       }
     },
     async addTag(_, {name, cover}) {

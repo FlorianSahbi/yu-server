@@ -7,6 +7,8 @@ require('./schemas/playlistsSchema');
 require('./schemas/songsSchema');
 require('./schemas/tagsSchema');
 require('./schemas/usersSchema');
+require('./schemas/roundsSchema');
+require('./schemas/ranksSchema');
 
 const typeDefs = require('./typeDefs');
 const resolvers = require('./resolvers');
@@ -17,5 +19,5 @@ const db = mongoose.connection;
 db.on('error', console.log.bind(console, 'connection error:'));
 db.once('open', () => console.log('DB Connected'));
 
-const server = new ApolloServer({typeDefs, resolvers, tracing: true});
+const server = new ApolloServer({typeDefs, resolvers});
 server.listen({port: process.env.PORT || 4000}).then((connection) => console.log(connection.url));

@@ -9,12 +9,14 @@ const typeDefs = gql`
   }
 
   type Rank {
+    _id: ID
     position: Int
     player: User
     points: Int
   }
 
   type Round {
+    _id: ID
     song: Song
     position: Int
     rank: [Rank]
@@ -134,26 +136,29 @@ const typeDefs = gql`
       tags: [ID]
     ): Song
 
-    addGame(
-      players: [ID],
-      tags: [ID],
-    ): Game
-    updateGame(
+    addGame: Game
+
+    updateGameAddPlayers(
       id: ID, 
       players: [ID]
+    ): Game
+
+    updateGameAddTags(
+      id: ID, 
       tags: [ID]
-      positionPlayer: Int
-      positionRound: Int
-      songRound: ID
-      song: ID
-      player: ID
-      points: Int
     ): Game
 
     updateGameAddRound(
       id: ID, 
-      positionRound: Int
+      position: Int
       song: ID
+    ): Game
+
+    updateGameAddRank(
+      id: ID, 
+      position: Int
+      points: Int
+      player: ID
     ): Game
 
     addTag(
