@@ -87,6 +87,7 @@ const typeDefs = gql`
   }
 
   type Query {
+    getLeaderboard(gameId: ID): Int
     song(id: ID): Song
     songs(tag: ID): [Song]
     randomSong(tag: ID): Song
@@ -157,6 +158,7 @@ const typeDefs = gql`
     updateGameAddRank(
       id: ID, 
       position: Int
+      round: Int
       points: Int
       player: ID
     ): Game

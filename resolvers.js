@@ -28,6 +28,18 @@ const dateScalar = new GraphQLScalarType({
 const resolvers = {
   Date: dateScalar,
   Query: {
+    async getLeaderboard(_, {gameId}) {
+      const lb = await Game.findById(gameId);
+      // console.log('ok');
+
+      // console.log(lb.players);
+      // console.log(lb.history);
+
+      const allRound = lb.history.map((round) => round.rank).flat();
+      // console.log(allRound);
+      const pointJ = allRound.map((rank) => rank.points).reduce((acc, val) => acc + val, 0);
+      return pointJ;
+    },
     async getSongData(_, {url}) {
       const data = await ytdl.getInfo(url);
       const cover = data.player_response.videoDetails.thumbnail.thumbnails.filter((t) => t.height > 720).map((t) => t.url)[0];
@@ -219,14 +231,14 @@ const resolvers = {
         console.error(error);
       }
     },
-    async updateGameAddRank(_, {id, position, player, points}) {
+    async updateGameAddRank(_, {id, round, position, player, points}) {
       try {
         const res = await Game.findById(id).exec();
         const rank = {position, player, points};
-        console.log({position, player, points});
-        res.history[0].rank.addToSet(rank);
+        console.log({position, player, points, round});
+        res.history[round].rank.addToSet(rank);
         console.log(res);
-        console.log(res.history[0].rank);
+        console.log(res.history[round].rank);
         const result = await res.save();
         console.log(result);
         // const rank = {position, user, points};
