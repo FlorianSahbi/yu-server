@@ -1,4 +1,4 @@
-const {gql} = require('apollo-server');
+const { gql } = require("apollo-server");
 
 const typeDefs = gql`
   scalar Date
@@ -6,6 +6,17 @@ const typeDefs = gql`
   type YouTubeData {
     cover: String
     title: String
+  }
+
+  type Leaderboard {
+    player: User
+    points: Int
+  }
+
+  input userDiscordData {
+    id:String 
+    username: String
+    avatar: String
   }
 
   type Rank {
@@ -30,6 +41,8 @@ const typeDefs = gql`
     tags: [Tag]
     players: [User]
     history: [Round]
+    createdAt: Date
+    updatedAt: Date
   }
 
   type Song {
@@ -73,6 +86,7 @@ const typeDefs = gql`
     avatar: String
     songs: [Song]
     discordId: String
+    gamesCpt: Int
     createdAt: Date
     updatedAt: Date
   }
@@ -87,7 +101,7 @@ const typeDefs = gql`
   }
 
   type Query {
-    getLeaderboard(gameId: ID): Int
+    getLeaderboard(gameId: ID): [Leaderboard]
     song(id: ID): Song
     songs(tag: ID): [Song]
     randomSong(tag: ID): Song
@@ -113,6 +127,10 @@ const typeDefs = gql`
   }
 
   type Mutation {
+    updateAndAdd(
+      userDiscordData: [userDiscordData],
+      id: ID
+    ): Game
     acceptSong(
       id: ID
     ): Song
@@ -162,6 +180,9 @@ const typeDefs = gql`
       points: Int
       player: ID
     ): Game
+    deleteGame(
+      id: ID
+    ): Game
 
     addTag(
       name: String,
@@ -191,8 +212,13 @@ const typeDefs = gql`
       songs: [ID]
     ): Playlist
 
-    addUser(username: String,
+    addUser(
+      username: String,
       avatar: String
+    ): User
+
+    addUserWithDiscordId(
+      discordId: String
     ): User
     deleteUser(
       id: ID
