@@ -8,6 +8,20 @@ const typeDefs = gql`
     title: String
   }
 
+
+  type YouTubeTumbnail {
+    url: String
+    width: Int
+    height: Int
+  },
+  
+  type YouTubeScrappedData{
+    title: String
+    keywords: [String]
+    videoUrl: String
+    thumbnails: [YouTubeTumbnail]
+  }
+
   type Leaderboard {
     player: User
     points: Int
@@ -120,6 +134,10 @@ const typeDefs = gql`
       limit: Int,
       page: Int
     ): TagConnection
+
+    getTracksFromUrl(
+      urls: [String]
+    ): [YouTubeScrappedData]
 
     getSongData(
       url: String

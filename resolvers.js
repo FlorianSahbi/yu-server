@@ -63,6 +63,24 @@ const resolvers = {
       const { title } = data.player_response.videoDetails;
       return { title, cover };
     },
+    async getTracksFromUrl(_, { urls }) {
+      let promises = [];
+      urls.forEach((u) => {
+        promises = [...promises, ytdl.getInfo(u)];
+      });
+      const values = await Promise.all(promises);
+      const data = await values.map(({
+        videoDetails: {
+          // eslint-disable-next-line camelcase
+          title, keywords, video_url, thumbnails,
+        },
+      }) => ({
+        title, keywords, videoUrl: video_url, thumbnails,
+      }));
+
+      console.log(data);
+      return data;
+    },
     async songs(_, { tag }) {
       const songs = await Song
         .find(tag ? { tags: tag } : {})
