@@ -1,11 +1,10 @@
 const mongoose = require("mongoose");
-const { thumbnailsSchema } = require("./thumbnailsSchema");
 
 const tagsSchema = new mongoose.Schema({
   name: String,
   playCount: { type: Number, default: 0 },
   isCustom: { type: Boolean, default: true },
-  thumbnail: thumbnailsSchema,
+  thumbnail: String,
   tracks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Track" }],
   creator: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 }, { timestamps: true });

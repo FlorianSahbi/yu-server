@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const { thumbnailsSchema } = require("./thumbnailsSchema");
 
 const tracksSchema = new mongoose.Schema({
   title: String,
@@ -12,7 +11,7 @@ const tracksSchema = new mongoose.Schema({
   isAccepted: { type: Boolean, default: false },
   answers: [String],
   keywords: [String],
-  thumbnails: [thumbnailsSchema],
+  thumbnail: String,
   creator: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   tags: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tag" }],
 }, { timestamps: true });

@@ -12,7 +12,7 @@ const typeDefs = gql`
     lengthSeconds: String,
     category: String,
     ownerChannelName: String,
-    thumbnails: [Thumbnail],
+    thumbnail: String,
     isAccepted: Boolean,
     answers: [String],
     keywords: [String],
@@ -25,7 +25,7 @@ const typeDefs = gql`
   type Tag {
     _id: ID,
     name: String,
-    thumbnail: Thumbnail,
+    thumbnail: String,
     playCount: Int,
     isCustom: Boolean,
     tracks: [Track],
@@ -76,24 +76,22 @@ const typeDefs = gql`
     updatedAt: Date
   }
 
-  type Thumbnail {
-    url: String,
-    width: Int,
-    height: Int,
-    createdAt: Date,
-    updatedAt: Date
-  },
-
   type Leaderboard {
     player: User,
     points: Int
+  }
+
+  type YouTubeThumbnail {
+    url: String,
+    width: Int,
+    height: Int
   }
 
   type YouTubeData{
     title: String,
     keywords: [String],
     videoUrl: String,
-    thumbnails: [Thumbnail],
+    thumbnails: [YouTubeThumbnail],
     lengthSeconds: String,
     category: String,
     ownerChannelName: String,
@@ -106,12 +104,6 @@ const typeDefs = gql`
     avatar: String
   }
 
-  input thumbnailInput {
-    url: String,
-    width: Int,
-    height: Int,
-  }
-
   input trackInput {
     title: String,
     videoUrl: String,
@@ -119,7 +111,7 @@ const typeDefs = gql`
     lengthSeconds: String,
     category: String,
     ownerChannelName: String,
-    thumbnails: [thumbnailInput],
+    thumbnail: String,
     answers: [String],
     keywords: [String],
     creator: ID,
@@ -128,7 +120,7 @@ const typeDefs = gql`
 
   input tagInput {
     name: String,
-    thumbnail: thumbnailInput,
+    thumbnail: String,
     tracks: [ID],
     creator: ID,
   }
@@ -187,6 +179,7 @@ const typeDefs = gql`
     updateGameAddRound( id: ID, roundInput: roundInput): Game
     updateGameAddRank(id: ID, round: Int, rankInput: rankInput): Game
 
+    createCustomPlaylist(userId: ID, tagInput: tagInput, trackInputs: [trackInput]): Tag
     createUserWithDiscordId(discordId: String): User
     updateAndAdd(userDiscordData: [userDiscordData], id: ID): Game
     acceptTrack(id: ID): Track

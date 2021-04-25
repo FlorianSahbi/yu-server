@@ -115,10 +115,10 @@ const resolvers = {
         return error;
       }
     },
-    async youtubeData(_, { urls }) {
+    async youtubeData(_, { youtubeUrls }) {
       try {
         let promises = [];
-        urls.forEach((u) => {
+        youtubeUrls.forEach((u) => {
           promises = [...promises, ytdl.getInfo(u)];
         });
         const values = await Promise.all(promises);
@@ -284,6 +284,17 @@ const resolvers = {
         return updatedGame;
       } catch (error) {
         return false;
+      }
+    },
+    async createCustomPlaylist(_, { userId, tagInput, trackInputs }) {
+      try {
+        console.log({ userId, tagInput, trackInputs });
+        const tracks = await Track.insertMany(trackInputs);
+        const tracksIds = tracks.reduce((acc, value) => [...acc, value._id], []);
+        const newTag = await Tag.create({ ...tagInput, tracks: tracksIds });
+        return newTag.populate("tracks").populate("creator").execPopulate();
+      } catch (error) {
+        return error;
       }
     },
   },
