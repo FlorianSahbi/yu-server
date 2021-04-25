@@ -1,12 +1,14 @@
 const mongoose = require("mongoose");
-const mongoosePaginate = require("mongoose-paginate-v2");
+const { thumbnailsSchema } = require("./thumbnailsSchema");
 
 const tagsSchema = new mongoose.Schema({
   name: String,
-  cover: String,
-  songs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Song" }],
+  playCount: { type: Number, default: 0 },
+  isCustom: { type: Boolean, default: true },
+  thumbnail: thumbnailsSchema,
+  tracks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Track" }],
+  creator: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 }, { timestamps: true });
-tagsSchema.plugin(mongoosePaginate);
 
 const Tag = mongoose.model("Tag", tagsSchema);
 

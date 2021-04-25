@@ -1,12 +1,10 @@
+/* eslint-disable camelcase */
 /* eslint-disable no-shadow */
-/* eslint-disable consistent-return */
-/* eslint-disable array-callback-return */
 const ytdl = require("ytdl-core");
 const { GraphQLScalarType, Kind } = require("graphql");
 const groupBy = require("./utils/groupBy");
-const Song = require("./schemas/songsSchema");
+const Track = require("./schemas/tracksSchema");
 const Game = require("./schemas/gamesSchema");
-const Playlist = require("./schemas/playlistsSchema");
 const Tag = require("./schemas/tagsSchema");
 const User = require("./schemas/usersSchema");
 const getRandomIntInclusive = require("./utils/getRandomIntInclusive");
@@ -31,7 +29,58 @@ const dateScalar = new GraphQLScalarType({
 const resolvers = {
   Date: dateScalar,
   Query: {
-    async getLeaderboard(_, { gameId }) {
+    // TRACK : OK
+    async tracks(_, { tag }) {
+      const tracks = await Track.find(tag ? { tags: tag } : {}).populate("creator").populate("tags").sort({ updatedAt: "desc" })
+        .exec();
+      return tracks;
+    },
+    async track(_, { id }) {
+      const track = await Track.findById(id).populate("creator").populate("tags").exec();
+      return track;
+    },
+    // TAG : OK
+    async tags() {
+      const tags = await Tag.find().populate("creator").populate("tracks").exec();
+      return tags;
+    },
+    async tag(_, { id }) {
+      const tag = await Tag.findById(id).populate("creator").populate("tracks").exec();
+      return tag;
+    },
+    // USER : OK
+    async users() {
+      const users = await User.find().sort({ updatedAt: "desc" }).populate("tracks").exec();
+      return users;
+    },
+    async user(_, { id }) {
+      const user = await User.findById(id).populate("tracks").exec();
+      return user;
+    },
+    // GAME
+    async games() {
+      const games = await Game
+        .find()
+        .populate("players")
+        .populate("tags")
+        .populate("history.song")
+        .populate("history.rank.player")
+        .sort("-createdAt")
+        .exec();
+      return games;
+    },
+    async game(_, { id }) {
+      const game = await Game
+        .findById(id)
+        .populate("players")
+        .populate("tags")
+        .populate("history.song")
+        .populate("history.rank.player")
+        .exec();
+      return game;
+    },
+    // UTILS
+    async leaderboard(_, { gameId }) {
       const game = await Game
         .findById(gameId)
         .populate("players")
@@ -57,176 +106,159 @@ const resolvers = {
 
       return lb;
     },
-    async getSongData(_, { url }) {
-      const data = await ytdl.getInfo(url);
-      const cover = data.player_response.videoDetails.thumbnail.thumbnails.filter((t) => t.height > 720).map((t) => t.url)[0];
-      const { title } = data.player_response.videoDetails;
-      return { title, cover };
-    },
-    async getTracksFromUrl(_, { urls }) {
-      let promises = [];
-      urls.forEach((u) => {
-        promises = [...promises, ytdl.getInfo(u)];
-      });
-      const values = await Promise.all(promises);
-      const data = await values.map(({
-        videoDetails: {
-          // eslint-disable-next-line camelcase
-          title, keywords, video_url, thumbnails,
-        },
-      }) => ({
-        title, keywords, videoUrl: video_url, thumbnails,
-      }));
-
-      console.log(data);
-      return data;
-    },
-    async songs(_, { tag }) {
-      const songs = await Song
-        .find(tag ? { tags: tag } : {})
-        .populate("user")
-        .populate("tags")
-        .sort({ updatedAt: "desc" })
-        .exec();
-      return songs;
-    },
-    async randomSong(_, { tag }) {
+    async randomTrack(_, { tag }) {
       try {
-        const counter = await Song.find({ tags: tag }).count().exec();
-        const rSong = await Song.find({ tags: tag }).exec();
+        const counter = await Track.find({ tags: tag }).count().exec();
+        const rSong = await Track.find({ tags: tag }).exec();
         return rSong[getRandomIntInclusive(0, counter - 1)];
       } catch (error) {
         return error;
       }
     },
-    async song(_, { id }) {
-      const song = await Song
-        .findById(id)
-        .populate("user")
-        .populate("tags")
-        .exec();
-      return song;
-    },
-    async games() {
-      const games = await Game
-        .find()
-        .populate("players")
-        .populate("tags")
-        .populate("history.song")
-        .populate("history.rank.player")
-        .sort("-createdAt")
-        .exec();
-      return games;
-    },
-    async game(_, { id }) {
-      const game = await Game
-        .findById(id)
-        .populate("players")
-        .populate("tags")
-        .populate("history.song")
-        .populate("history.rank.player")
-        .exec();
-      return game;
-    },
-    async tags(_, { page, limit }) {
-      let options = [];
-
-      if (limit === 0) {
-        options = {
-          page: 1,
-          limit: 0,
-        };
-      } else if (page && limit) {
-        options = {
-          page,
-          limit,
-        };
-      } else {
-        options = {
-          pagination: false,
-        };
+    async youtubeData(_, { urls }) {
+      try {
+        let promises = [];
+        urls.forEach((u) => {
+          promises = [...promises, ytdl.getInfo(u)];
+        });
+        const values = await Promise.all(promises);
+        const data = await values.map(({
+          videoDetails: {
+            title, keywords, video_url, thumbnails, lengthSeconds, category, ownerChannelName, videoId,
+          },
+        }) => ({
+          title, keywords, videoUrl: video_url, thumbnails, lengthSeconds, category, ownerChannelName, videoId,
+        }));
+        return data;
+      } catch (error) {
+        return error;
       }
-
-      const tags = await Tag
-        .paginate({}, options);
-      return tags;
-    },
-    async tag(_, { id }) {
-      const tag = await Tag
-        .findById(id)
-        .exec();
-      return tag;
-    },
-    async playlists() {
-      const playlists = await Playlist
-        .find()
-        .populate("songs")
-        .sort({ updatedAt: "desc" })
-        .exec();
-      return playlists;
-    },
-    async playlist(_, { id }) {
-      const playlist = await Playlist
-        .findById(id)
-        .populate("songs")
-        .exec();
-      return playlist;
-    },
-    async users() {
-      const users = await User
-        .find()
-        .sort({ updatedAt: "desc" })
-        .exec();
-      return users;
-    },
-    async user(_, { id }) {
-      const user = await User
-        .findById(id)
-        .exec();
-      return user;
     },
   },
   Mutation: {
-    async acceptSong(_, { id }) {
-      const updatedSong = await Song
-        .findByIdAndUpdate(id, {
-          isAccepted: true,
-        }, { new: true })
-        .populate("user")
-        .populate("tags")
-        .exec();
-      return updatedSong;
+    // TRACK : OK
+    async createTrack(_, { trackInput }) {
+      try {
+        const newTrack = await Track.create({ ...trackInput });
+        // todo : add track in user
+        return newTrack.populate("creator").populate("tags").execPopulate();
+      } catch (error) {
+        return error;
+      }
     },
-    async addSong(_, {
-      title, url, cover, user, correctWords, tags,
-    }) {
-      const newSong = await Song
-        .create({
-          title, url, cover, user, correctWords, tags,
-        });
-      return newSong.populate("tags").populate("user").execPopulate();
+    // OK
+    async deleteTrack(_, { id }) {
+      try {
+        const deletedTrack = await Track.findByIdAndDelete(id);
+        // todo : delete track in user
+        return deletedTrack;
+      } catch (error) {
+        return error;
+      }
     },
-    async deleteSong(_, { id }) {
-      const deletedSong = await Song
-        .findByIdAndDelete(id);
-      return deletedSong;
+    // TRACK UTILS : OK
+    async acceptTrack(_, { id }) {
+      try {
+        const updatedTrack = await Track.findByIdAndUpdate(id, { isAccepted: true }, { new: true }).exec();
+        return updatedTrack;
+      } catch (error) {
+        return error;
+      }
     },
-    async updateSong(_, {
-      id, title, cover, url, correctWords, user, tags,
-    }) {
-      const updatedSong = await Song
-        .findByIdAndUpdate(id, {
-          title, cover, url, correctWords, user, tags,
-        }, { new: true })
-        .populate("user")
-        .populate("tags")
-        .exec();
-      return updatedSong;
+    // TAG : OK
+    async createTag(_, { tagInput }) {
+      try {
+        const newTag = await Tag.create({ ...tagInput });
+        // todo : add tag in user
+        return newTag.populate("creator").populate("tracks").execPopulate();
+      } catch (error) {
+        return error;
+      }
     },
-    async addGame() {
-      const newGame = await Game.create({});
-      return newGame;
+    // OK
+    async deleteTag(_, { id }) {
+      try {
+        const deleteTag = await Tag.findByIdAndDelete(id);
+        // todo : delete track in user
+        return deleteTag;
+      } catch (error) {
+        return error;
+      }
     },
+    // USER : OK
+    async createUser(_, { userInput }) {
+      try {
+        const newUser = await User.create({ ...userInput });
+        return newUser.populate("tracks").execPopulate();
+      } catch (error) {
+        return error;
+      }
+    },
+    // OK
+    async deleteUser(_, { id }) {
+      try {
+        const deletedUser = await User.findByIdAndDelete(id);
+        return deletedUser;
+      } catch (error) {
+        return error;
+      }
+    },
+    // GAME : OK
+    async createGame() {
+      try {
+        const newGame = await Game.create({});
+        return newGame;
+      } catch (error) {
+        return error;
+      }
+    },
+    // OK
+    async deleteGame(_, { id }) {
+      try {
+        const deletedGame = await Game.findByIdAndDelete(id);
+        return deletedGame;
+      } catch (error) {
+        return error;
+      }
+    },
+    // OK
+    async updateGameAddPlayers(_, { id, users }) {
+      try {
+        const updatedGame = await Game.findByIdAndUpdate(id, { $addToSet: { users } }, { new: true }).exec();
+        return updatedGame;
+      } catch (error) {
+        return error;
+      }
+    },
+    // OK
+    async updateGameAddTags(_, { id, tags }) {
+      try {
+        const updatedGame = await Game.findByIdAndUpdate(id, { $addToSet: { tags } }, { new: true }).exec();
+        return updatedGame;
+      } catch (error) {
+        return error;
+      }
+    },
+    // OK
+    async updateGameAddRound(_, { id, roundInput }) {
+      try {
+        const updatedGame = await Game.findByIdAndUpdate(id, { $addToSet: { history: { ...roundInput } } }, { new: true }).exec();
+        return updatedGame;
+      } catch (error) {
+        return error;
+      }
+    },
+    // OK
+    async updateGameAddRank(_, { id, round, rankInput }) {
+      try {
+        await Game.updateOne({ _id: id, "history.position": round }, { $addToSet: { "history.$.ranks": { ...rankInput } } }, { new: true }).exec();
+        const updatedGame = await Game.findById(id).exec();
+        return updatedGame;
+      } catch (error) {
+        return error;
+      }
+    },
+    // UTILS
     async updateAndAdd(_, { userDiscordData, id }) {
       try {
         const ids = userDiscordData.map((data) => data.id);
@@ -253,124 +285,6 @@ const resolvers = {
       } catch (error) {
         return false;
       }
-    },
-    async updateGameAddPlayers(_, { id, players }) {
-      try {
-        const updatedGame = await Game
-          .findByIdAndUpdate(id, {
-            $addToSet: { players },
-          }, { new: true })
-          .populate("players")
-          .populate("tags")
-          .populate("history.song")
-          .exec();
-        return updatedGame;
-      } catch (error) {
-        return error;
-      }
-    },
-    async updateGameAddTags(_, { id, tags }) {
-      try {
-        const updatedGame = await Game
-          .findByIdAndUpdate(id, {
-            $addToSet: { tags },
-          }, { new: true })
-          .populate("players")
-          .populate("tags")
-          .populate("history.song")
-          .exec();
-        return updatedGame;
-      } catch (error) {
-        return error;
-      }
-    },
-    async updateGameAddRound(_, { id, position, song }) {
-      try {
-        const round = { song, position, rank: [] };
-        const updatedGame = await Game
-          .findByIdAndUpdate(id, {
-            $addToSet: { history: round },
-          }, { new: true })
-          .populate("players")
-          .populate("tags")
-          .populate("history.song")
-          .exec();
-        return updatedGame;
-      } catch (error) {
-        return error;
-      }
-    },
-    async updateGameAddRank(_, {
-      id, round, position, player, points,
-    }) {
-      try {
-        const res = await Game.findById(id).exec();
-        const rank = {
-          position, round, player, points,
-        };
-        res.history[round - 1].rank.addToSet(rank);
-        const result = await res.save();
-        return result;
-      } catch (error) {
-        return error;
-      }
-    },
-    async deleteGame(_, { id }) {
-      const deletedGame = await Game
-        .findByIdAndDelete(id);
-      return deletedGame;
-    },
-    async addTag(_, { name, cover }) {
-      const newTag = await Tag
-        .create({ name, cover });
-      return newTag;
-    },
-    async deleteTag(_, { id }) {
-      const deleteTag = await Tag
-        .findByIdAndDelete(id);
-      return deleteTag;
-    },
-    async updateTag(_, { id, name, cover }) {
-      const updatedTag = await Tag
-        .findByIdAndUpdate(id, {
-          id, name, cover,
-        }, { new: true })
-        .exec();
-      return updatedTag;
-    },
-    async addPlaylist(_, { name, thumbnail, songs }) {
-      const newPlaylist = await Playlist
-        .create({ name, thumbnail, songs });
-      return newPlaylist;
-    },
-    async deletePlaylist(_, { id }) {
-      const deletedPlaylist = await Playlist
-        .findByIdAndDelete(id);
-      return deletedPlaylist;
-    },
-    async updatePlaylist(_, {
-      id, name, thumbnail, songs,
-    }) {
-      const updatedPlaylist = await Playlist
-        .findByIdAndUpdate(id, { name, thumbnail, songs })
-        .populate("songs")
-        .exec();
-      return updatedPlaylist;
-    },
-    async addUser(_, { username, avatar }) {
-      const newUser = await User
-        .create({ username, avatar });
-      return newUser;
-    },
-    async deleteUser(_, { id }) {
-      const deletedUser = await User
-        .findByIdAndDelete(id);
-      return deletedUser;
-    },
-    async updateUser(_, { id, username, avatar }) {
-      const updatedUser = await User
-        .findByIdAndUpdate(id, { username, avatar });
-      return updatedUser;
     },
   },
 };

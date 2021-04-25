@@ -4,8 +4,8 @@ const { ranksSchema } = require("./ranksSchema");
 
 const roundsSchema = new mongoose.Schema({
   position: Number,
-  song: { type: mongoose.Schema.Types.ObjectId, ref: "Song" },
-  rank: [ranksSchema],
+  track: { type: mongoose.Schema.Types.ObjectId, ref: "Track" },
+  ranks: [ranksSchema],
 }, { timestamps: true });
 
 const Round = mongoose.model("Round", roundsSchema);

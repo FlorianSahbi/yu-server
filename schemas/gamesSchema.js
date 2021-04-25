@@ -4,10 +4,11 @@ const { roundsSchema } = require("./roundsSchema");
 
 const gamesSchema = new mongoose.Schema({
   name: { type: String, default: "Yu's game" },
-  points: { type: Number, default: 100 },
+  goal: { type: Number, default: 100 },
   trackTime: { type: Number, default: 10000 },
-  players: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   tags: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tag" }],
+  users: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  creator: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   history: [roundsSchema],
 }, { timestamps: true });
 

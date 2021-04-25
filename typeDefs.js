@@ -3,249 +3,193 @@ const { gql } = require("apollo-server");
 const typeDefs = gql`
   scalar Date
 
-  type YouTubeData {
-    cover: String
-    title: String
-  }
-
-
-  type YouTubeTumbnail {
-    url: String
-    width: Int
-    height: Int
-  },
-  
-  type YouTubeScrappedData{
-    title: String
-    keywords: [String]
-    videoUrl: String
-    thumbnails: [YouTubeTumbnail]
-  }
-
-  type Leaderboard {
-    player: User
-    points: Int
-  }
-
-  input userDiscordData {
-    id:String 
-    username: String
-    avatar: String
-  }
-
-  type Rank {
-    _id: ID
-    position: Int
-    player: User
-    points: Int
-  }
-
-  type Round {
-    _id: ID
-    song: Song
-    position: Int
-    rank: [Rank]
-  }
-
-  type Game {
-    _id: ID
-    name: String
-    points: Int
-    trackTime: Int
-    tags: [Tag]
-    players: [User]
-    history: [Round]
-    createdAt: Date
-    updatedAt: Date
-  }
-
-  type Song {
-    _id: ID
-    title: String
-    url: String
-    cover: String
-    correctWords: [String]
-    user: User
-    tags: [Tag]
-    isAccepted: Boolean
-    createdAt: Date
+  type Track {
+    _id: ID,
+    title: String,
+    videoUrl: String,
+    videoId: String,
+    playCount: Int,
+    lengthSeconds: String,
+    category: String,
+    ownerChannelName: String,
+    thumbnails: [Thumbnail],
+    isAccepted: Boolean,
+    answers: [String],
+    keywords: [String],
+    tags: [Tag],
+    creator: User,
+    createdAt: Date,
     updatedAt: Date
   }
 
   type Tag {
-    _id: ID
-    name: String
-    cover: String
-    songs: [Song]
-    createdAt: Date
+    _id: ID,
+    name: String,
+    thumbnail: Thumbnail,
+    playCount: Int,
+    isCustom: Boolean,
+    tracks: [Track],
+    creator: User,
+    createdAt: Date,
     updatedAt: Date
-  }
-
-  type TagConnection {
-    docs: [Tag]
-    totalDocs: Int
-    limit: Int
-    totalPages: Int
-    page: Int
-    pagingCounter: Int
-    hasPrevPage: Boolean
-    hasNextPage: Boolean
-    prevPage: Int,
-    nextPage: Int
   }
 
   type User {
-    _id: ID
-    username: String
-    avatar: String
-    songs: [Song]
-    discordId: String
-    gamesCpt: Int
-    createdAt: Date
+    _id: ID,
+    username: String,
+    avatar: String,
+    tracks: [Track],
+    discordId: String,
+    gamesCpt: Int,
+    createdAt: Date,
     updatedAt: Date
   }
 
-  type Playlist {
-    _id: ID 
-    name: String 
-    thumbnail: String 
-    songs: [Song]  
-    createdAt: Date
+  type Game {
+    _id: ID,
+    name: String,
+    goal: Int,
+    trackTime: Int,
+    tags: [Tag],
+    users: [User],
+    history: [Round],
+    creator: User,
+    createdAt: Date,
     updatedAt: Date
+  }
+
+  type Round {
+    _id: ID,
+    position: Int,
+    track: Track,
+    ranks: [Rank],
+    createdAt: Date,
+    updatedAt: Date
+  }
+
+  type Rank {
+    _id: ID,
+    position: Int,
+    user: User,
+    points: Int,
+    createdAt: Date,
+    updatedAt: Date
+  }
+
+  type Thumbnail {
+    url: String,
+    width: Int,
+    height: Int,
+    createdAt: Date,
+    updatedAt: Date
+  },
+
+  type Leaderboard {
+    player: User,
+    points: Int
+  }
+
+  type YouTubeData{
+    title: String,
+    keywords: [String],
+    videoUrl: String,
+    thumbnails: [Thumbnail],
+    lengthSeconds: String,
+    category: String,
+    ownerChannelName: String,
+    videoId: String
+  }
+
+  input userDiscordData {
+    id: String,
+    username: String,
+    avatar: String
+  }
+
+  input thumbnailInput {
+    url: String,
+    width: Int,
+    height: Int,
+  }
+
+  input trackInput {
+    title: String,
+    videoUrl: String,
+    videoId: String,
+    lengthSeconds: String,
+    category: String,
+    ownerChannelName: String,
+    thumbnails: [thumbnailInput],
+    answers: [String],
+    keywords: [String],
+    creator: ID,
+    tags: [ID],
+  }
+
+  input tagInput {
+    name: String,
+    thumbnail: thumbnailInput,
+    tracks: [ID],
+    creator: ID,
+  }
+
+  input userInput {
+    username: String,
+    avatar: String,
+    discordId: String,
+  }
+
+  input roundInput {
+    position: Int,
+    track: ID,
+  }
+
+  input rankInput {
+    position: Int,
+    user: ID,
+    points: Int,
   }
 
   type Query {
-    getLeaderboard(gameId: ID): [Leaderboard]
-    song(id: ID): Song
-    songs(tag: ID): [Song]
-    randomSong(tag: ID): Song
+    tracks(tag: ID): [Track]
+    track(id: ID): Track
 
-    game(id: ID): Game
-    games: [Game]
-
-    playlist(id: ID): Playlist
-    playlists: [Playlist]
-
-    user(id: ID): User
-    users: [User]
-
+    tags: [Tag]
     tag(id: ID): Tag
-    tags(
-      limit: Int,
-      page: Int
-    ): TagConnection
 
-    getTracksFromUrl(
-      urls: [String]
-    ): [YouTubeScrappedData]
+    games: [Game]
+    game(id: ID): Game
 
-    getSongData(
-      url: String
-    ): YouTubeData
+    users: [User]
+    user(id: ID): User
+
+    leaderboard(id: ID): [Leaderboard]
+
+    randomTrack(tag: ID): Track
+
+    youtubeData(youtubeUrls: [String]): [YouTubeData]
   }
 
   type Mutation {
-    updateAndAdd(
-      userDiscordData: [userDiscordData],
-      id: ID
-    ): Game
-    acceptSong(
-      id: ID
-    ): Song
-    addSong(
-      title: String,
-      url: String,
-      cover: String,
-      user: ID,
-      correctWords: [String],
-      tags: [ID]
-    ): Song
-    deleteSong(
-      id: ID
-    ): Song
-    updateSong(
-      id: ID, 
-      title: String, 
-      cover: String, 
-      url: String, 
-      correctWords: [String],
-      user: ID, 
-      tags: [ID]
-    ): Song
+    createTrack(trackInput: trackInput): Track
+    deleteTrack(id: ID): Track
 
-    addGame: Game
+    createTag(tagInput: tagInput): Tag
+    deleteTag(id: ID): Tag
 
-    updateGameAddPlayers(
-      id: ID, 
-      players: [ID]
-    ): Game
+    createUser(userInput: userInput): User
+    deleteUser(id: ID): User
 
-    updateGameAddTags(
-      id: ID, 
-      tags: [ID]
-    ): Game
+    createGame: Game
+    deleteGame(id: ID): Game
+    updateGameAddPlayers(id: ID, users: [ID]): Game
+    updateGameAddTags(id: ID, tags: [ID]): Game
+    updateGameAddRound( id: ID, roundInput: roundInput): Game
+    updateGameAddRank(id: ID, round: Int, rankInput: rankInput): Game
 
-    updateGameAddRound(
-      id: ID, 
-      position: Int
-      song: ID
-    ): Game
-
-    updateGameAddRank(
-      id: ID, 
-      position: Int
-      round: Int
-      points: Int
-      player: ID
-    ): Game
-    deleteGame(
-      id: ID
-    ): Game
-
-    addTag(
-      name: String,
-      cover: String
-    ): Tag
-    deleteTag(
-      id: ID
-    ): Tag
-    updateTag(
-      id: ID, 
-      name: String, 
-      cover: String
-    ): Tag
-
-    addPlaylist(
-      name: String, 
-      thumbnail: String,
-      songs: [ID]
-    ): Playlist
-    deletePlaylist(
-      id: ID
-    ): Playlist
-    updatePlaylist(
-      id: ID, 
-      name: String, 
-      thumbnail: String,
-      songs: [ID]
-    ): Playlist
-
-    addUser(
-      username: String,
-      avatar: String
-    ): User
-
-    addUserWithDiscordId(
-      discordId: String
-    ): User
-    deleteUser(
-      id: ID
-    ): User
-    updateUser(
-      id: ID,
-      username: String, 
-      avatar: String
-    ): User
+    createUserWithDiscordId(discordId: String): User
+    updateAndAdd(userDiscordData: [userDiscordData], id: ID): Game
+    acceptTrack(id: ID): Track
 }
 `;
 

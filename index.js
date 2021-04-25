@@ -4,12 +4,12 @@
 const { ApolloServer } = require("apollo-server");
 const mongoose = require("mongoose");
 require("./schemas/gamesSchema");
-require("./schemas/playlistsSchema");
-require("./schemas/songsSchema");
+require("./schemas/tracksSchema");
 require("./schemas/tagsSchema");
 require("./schemas/usersSchema");
 require("./schemas/roundsSchema");
 require("./schemas/ranksSchema");
+require("./schemas/thumbnailsSchema");
 
 const typeDefs = require("./typeDefs");
 const resolvers = require("./resolvers");
