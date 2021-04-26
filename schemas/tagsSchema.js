@@ -4,6 +4,7 @@ const tagsSchema = new mongoose.Schema({
   name: String,
   playCount: { type: Number, default: 0 },
   isCustom: { type: Boolean, default: true },
+  isUnlisted: { type: Boolean, default: false },
   thumbnail: String,
   tracks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Track" }],
   creator: { type: mongoose.Schema.Types.ObjectId, ref: "User" },

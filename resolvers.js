@@ -1,3 +1,4 @@
+/* eslint-disable newline-per-chained-call */
 /* eslint-disable camelcase */
 /* eslint-disable no-shadow */
 const ytdl = require("ytdl-core");
@@ -41,11 +42,11 @@ const resolvers = {
     },
     // TAG : OK
     async tags() {
-      const tags = await Tag.find().populate("creator").populate("tracks").exec();
+      const tags = await Tag.find().populate("creator").populate("tracks").populate("tracks.tags").exec();
       return tags;
     },
     async tag(_, { id }) {
-      const tag = await Tag.findById(id).populate("creator").populate("tracks").exec();
+      const tag = await Tag.findById(id).populate("creator").populate("tracks").populate("tracks.tags").exec();
       return tag;
     },
     // USER : OK
@@ -142,6 +143,15 @@ const resolvers = {
         const newTrack = await Track.create({ ...trackInput });
         // todo : add track in user
         return newTrack.populate("creator").populate("tags").execPopulate();
+      } catch (error) {
+        return error;
+      }
+    },
+    async createTracks(_, { trackInputs }) {
+      try {
+        const newTracks = await Track.insertMany(trackInputs);
+        // todo : add track in user
+        return newTracks;
       } catch (error) {
         return error;
       }
@@ -286,13 +296,13 @@ const resolvers = {
         return false;
       }
     },
-    async createCustomPlaylist(_, { userId, tagInput, trackInputs }) {
+    async createCustomPlaylist(_, { tagInput, trackInputs }) {
       try {
-        console.log({ userId, tagInput, trackInputs });
-        const tracks = await Track.insertMany(trackInputs);
+        const newTag = await Tag.create({ ...tagInput });
+        const tracks = await Track.insertMany(trackInputs.map((track) => ({ ...track, tags: [newTag._id] })));
         const tracksIds = tracks.reduce((acc, value) => [...acc, value._id], []);
-        const newTag = await Tag.create({ ...tagInput, tracks: tracksIds });
-        return newTag.populate("tracks").populate("creator").execPopulate();
+        const updatedTag = await Tag.findByIdAndUpdate(newTag._id, { $addToSet: { tracks: tracksIds } }, { new: true }).exec();
+        return updatedTag.populate("tracks").populate("creator").execPopulate();
       } catch (error) {
         return error;
       }

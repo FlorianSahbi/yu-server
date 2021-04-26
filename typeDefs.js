@@ -40,7 +40,7 @@ const typeDefs = gql`
     avatar: String,
     tracks: [Track],
     discordId: String,
-    gamesCpt: Int,
+    playCount: Int,
     createdAt: Date,
     updatedAt: Date
   }
@@ -164,6 +164,7 @@ const typeDefs = gql`
 
   type Mutation {
     createTrack(trackInput: trackInput): Track
+    createTracks(trackInputs: [trackInput]): [Track]
     deleteTrack(id: ID): Track
 
     createTag(tagInput: tagInput): Tag
@@ -179,7 +180,7 @@ const typeDefs = gql`
     updateGameAddRound( id: ID, roundInput: roundInput): Game
     updateGameAddRank(id: ID, round: Int, rankInput: rankInput): Game
 
-    createCustomPlaylist(userId: ID, tagInput: tagInput, trackInputs: [trackInput]): Tag
+    createCustomPlaylist(tagInput: tagInput, trackInputs: [trackInput]): Tag
     createUserWithDiscordId(discordId: String): User
     updateAndAdd(userDiscordData: [userDiscordData], id: ID): Game
     acceptTrack(id: ID): Track
