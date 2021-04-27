@@ -182,7 +182,7 @@ const typeDefs = gql`
 
     createCustomPlaylist(tagInput: tagInput, trackInputs: [trackInput]): Tag
     createUserWithDiscordId(discordId: String): User
-    updateAndAdd(userDiscordData: [userDiscordData], id: ID): Game
+    updateAndAdd(id: ID, userDiscordData: [userDiscordData], ): Game
     acceptTrack(id: ID): Track
 }
 `;

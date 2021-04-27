@@ -62,7 +62,7 @@ const resolvers = {
     async games() {
       const games = await Game
         .find()
-        .populate("players")
+        .populate("users")
         .populate("tags")
         .populate("history.song")
         .populate("history.rank.player")
@@ -73,31 +73,31 @@ const resolvers = {
     async game(_, { id }) {
       const game = await Game
         .findById(id)
-        .populate("players")
+        .populate("users")
         .populate("tags")
-        .populate("history.song")
+        .populate("history.track")
         .populate("history.rank.player")
         .exec();
       return game;
     },
     // UTILS
-    async leaderboard(_, { gameId }) {
+    async leaderboard(_, { id }) {
       const game = await Game
-        .findById(gameId)
-        .populate("players")
+        .findById(id)
+        .populate("users")
         .populate("tags")
-        .populate("history.song")
-        .populate("history.rank.player");
+        .populate("history.track")
+        .populate("history.ranks")
+        .populate("history.ranks.user");
 
-      const allRanks = game.history.map((round) => round.rank).flat();
-
+      const allRanks = game.history.map((round) => round.ranks).flat();
       if (allRanks.length <= 0) {
         return [];
       }
 
-      const leaderboard = groupBy(allRanks, (rank) => rank.player.username);
+      const leaderboard = groupBy(allRanks, (rank) => rank.user.username);
 
-      const lb = game.players.map((user) => {
+      const lb = game.users.map((user) => {
         if (leaderboard.get(user.username) !== undefined) {
           const points = leaderboard.get(user.username).reduce((acc, val) => val.points + acc, 0);
           return { player: user, points };
@@ -269,7 +269,7 @@ const resolvers = {
       }
     },
     // UTILS
-    async updateAndAdd(_, { userDiscordData, id }) {
+    async updateAndAdd(_, { id, userDiscordData }) {
       try {
         const ids = userDiscordData.map((data) => data.id);
         const u = await User.find({ discordId: { $in: ids } });
@@ -285,9 +285,9 @@ const resolvers = {
         const players = usersInGame.map((u) => u._id);
         const updatedGame = await Game
           .findByIdAndUpdate(id, {
-            $addToSet: { players },
+            $addToSet: { users: players },
           }, { new: true })
-          .populate("players")
+          .populate("users")
           .populate("tags")
           .populate("history.song")
           .exec();
