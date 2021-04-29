@@ -33,25 +33,30 @@ const resolvers = {
   Date: dateScalar,
   Query: {
     async auth(_, { code }) {
-      console.log(code, process.env.AUTH_CALLBACK, process.env.CLIENT_ID, process.env.CLIENT_SECRET)
-      const token = await oauth.tokenRequest({
-        clientId: process.env.CLIENT_ID,
-        clientSecret: process.env.CLIENT_SECRET,
-        code,
-        scope: "identify",
-        grantType: "authorization_code",
+      if (code) {
 
-        redirectUri: process.env.AUTH_CALLBACK,
-      })
-
-      const discordUser = await oauth.getUser(token.access_token);
-
-      const user = await User.findOneAndUpdate({ "discordData.id": discordUser.id }, { $setOnInsert: { ...discordUser, discordData: { ...discordUser } } }, { new: true, upsert: true })
-
-
-      console.log({ token, user });
-      return { token, user };
-    },
+        console.log(code, process.env.AUTH_CALLBACK, process.env.CLIENT_ID, process.env.CLIENT_SECRET)
+        const token = await oauth.tokenRequest({
+          clientId: process.env.CLIENT_ID,
+          clientSecret: process.env.CLIENT_SECRET,
+          code,
+          scope: "identify",
+          grantType: "authorization_code",
+          
+          redirectUri: process.env.AUTH_CALLBACK,
+        })
+        
+        console.log(token)
+        
+        const discordUser = await oauth.getUser(token.access_token);
+        
+        const user = await User.findOneAndUpdate({ "discordData.id": discordUser.id }, { $setOnInsert: { ...discordUser, discordData: { ...discordUser } } }, { new: true, upsert: true })
+        
+        
+        console.log({ token, user });
+        return { token, user };
+      } return {}
+      },
     async signIn(_, { token }) {
       const { id } = await oauth.getUser(token.access_token);
       const user = await User.findOne({ "discordData.id": id }).populate("tracks").exec();
