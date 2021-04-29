@@ -1,6 +1,8 @@
 /* eslint-disable newline-per-chained-call */
 /* eslint-disable camelcase */
 /* eslint-disable no-shadow */
+const DiscordOauth2 = require("discord-oauth2");
+const oauth = new DiscordOauth2();
 const ytdl = require("ytdl-core");
 const { GraphQLScalarType, Kind } = require("graphql");
 const groupBy = require("./utils/groupBy");
@@ -30,6 +32,31 @@ const dateScalar = new GraphQLScalarType({
 const resolvers = {
   Date: dateScalar,
   Query: {
+    async auth(_, { code }) {
+      const token = await oauth.tokenRequest({
+        clientId: process.env.CLIENT_ID,
+        clientSecret: process.env.CLIENT_SECRET,
+        code,
+        scope: "identify",
+        grantType: "authorization_code",
+
+        redirectUri: "http://localhost:3000/auth/process",
+      })
+
+      const discordUser = await oauth.getUser(token.access_token);
+
+      const user = await User.findOneAndUpdate({ "discordData.id": discordUser.id }, { $setOnInsert: { ...discordUser, discordData: { ...discordUser } } }, { new: true, upsert: true })
+
+
+      console.log({ token, user });
+      return { token, user };
+    },
+    async signIn(_, { token }) {
+      const { id } = await oauth.getUser(token.access_token);
+      const user = await User.findOne({ "discordData.id": id }).populate("tracks").exec();
+      console.log(user)
+      return user;
+    },
     // TRACK : OK
     async tracks(_, { tag }) {
       const tracks = await Track.find(tag ? { tags: tag } : {}).populate("creator").populate("tags").sort({ updatedAt: "desc" })

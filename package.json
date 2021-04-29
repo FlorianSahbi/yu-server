@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon src/index.js",
+    "start": "nodemon -r dotenv/config index.js",
     "lint": "eslint --ext .js ./",
     "lint.fix": "eslint --fix --ext .js ./"
   },
@@ -13,6 +13,8 @@
   "license": "ISC",
   "dependencies": {
     "apollo-server": "^2.21.1",
+    "discord-oauth2": "^2.6.0",
+    "dotenv": "^8.2.0",
     "graphql": "^15.5.0",
     "mongodb": "^3.6.6",
     "mongoose": "^5.12.3",

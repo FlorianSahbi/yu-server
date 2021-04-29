@@ -38,11 +38,38 @@ const typeDefs = gql`
     _id: ID,
     username: String,
     avatar: String,
+    email: String,
     tracks: [Track],
-    discordId: String,
     playCount: Int,
+    discordData: DiscordUserPayload,
     createdAt: Date,
     updatedAt: Date
+  }
+
+  type DiscordUserPayload {
+    id: String,
+    username: String,
+    avatar: String,
+    discriminator: String,
+    public_flags: Int,
+    flags: Int,
+    locale: String,
+    mfa_enabled: Boolean,
+    email: String,
+    verified: Boolean
+  }
+
+  type DiscordToken {
+    access_token: String,
+    expires_in: Int,
+    refresh_token: String,
+    scope: String,
+    token_type: String
+  }
+
+  type AuthPayload {
+    user: User,
+    token: DiscordToken,
   }
 
   type Game {
@@ -142,7 +169,26 @@ const typeDefs = gql`
     points: Int,
   }
 
+  input discordToken {
+    access_token: String,
+    expires_in: Int,
+    refresh_token: String,
+    scope: String,
+    token_type: String
+  }
+
+#   {
+#   access_token: 'lKND8I945IWyS1CwKwcZczEATjZu4Z',
+#   expires_in: 604800,
+#   refresh_token: 'OGy5LjC1GVTbih8EX1McAkkdYZaemK',
+#   scope: 'identify',
+#   token_type: 'Bearer'
+# }
+
   type Query {
+    auth(code: String): AuthPayload
+    signIn(token: discordToken): User
+
     tracks(tag: ID): [Track]
     track(id: ID): Track
 
