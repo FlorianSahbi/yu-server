@@ -40,7 +40,7 @@ const resolvers = {
         scope: "identify",
         grantType: "authorization_code",
 
-        redirectUri: "http://localhost:3000/auth/process",
+        redirectUri: process.env.AUTH_CALLBACK,
       })
 
       const discordUser = await oauth.getUser(token.access_token);
