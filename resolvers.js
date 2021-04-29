@@ -33,6 +33,7 @@ const resolvers = {
   Date: dateScalar,
   Query: {
     async auth(_, { code }) {
+      console.log(code, process.env.AUTH_CALLBACK, process.env.CLIENT_ID, process.env.CLIENT_SECRET)
       const token = await oauth.tokenRequest({
         clientId: process.env.CLIENT_ID,
         clientSecret: process.env.CLIENT_SECRET,
