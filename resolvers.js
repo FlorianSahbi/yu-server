@@ -1,20 +1,22 @@
+/* eslint-disable max-len */
 /* eslint-disable newline-per-chained-call */
 /* eslint-disable camelcase */
 /* eslint-disable no-shadow */
-const DiscordOauth2 = require("discord-oauth2");
+const DiscordOauth2 = require('discord-oauth2');
+
 const oauth = new DiscordOauth2();
-const ytdl = require("ytdl-core");
-const { GraphQLScalarType, Kind } = require("graphql");
-const groupBy = require("./utils/groupBy");
-const Track = require("./schemas/tracksSchema");
-const Game = require("./schemas/gamesSchema");
-const Tag = require("./schemas/tagsSchema");
-const User = require("./schemas/usersSchema");
-const getRandomIntInclusive = require("./utils/getRandomIntInclusive");
+const ytdl = require('ytdl-core');
+const { GraphQLScalarType, Kind } = require('graphql');
+const groupBy = require('./utils/groupBy');
+const Track = require('./schemas/tracksSchema');
+const Game = require('./schemas/gamesSchema');
+const Tag = require('./schemas/tagsSchema');
+const User = require('./schemas/usersSchema');
+const getRandomIntInclusive = require('./utils/getRandomIntInclusive');
 
 const dateScalar = new GraphQLScalarType({
-  name: "Date",
-  description: "Date custom scalar type",
+  name: 'Date',
+  description: 'Date custom scalar type',
   serialize(value) {
     return value.getTime();
   },
@@ -34,82 +36,80 @@ const resolvers = {
   Query: {
     async auth(_, { code }) {
       if (code) {
-
-        console.log(code, process.env.AUTH_CALLBACK, process.env.CLIENT_ID, process.env.CLIENT_SECRET)
+        console.log(code, process.env.AUTH_CALLBACK, process.env.CLIENT_ID, process.env.CLIENT_SECRET);
         const token = await oauth.tokenRequest({
           clientId: process.env.CLIENT_ID,
           clientSecret: process.env.CLIENT_SECRET,
           code,
-          scope: "identify",
-          grantType: "authorization_code",
-          
+          scope: 'identify',
+          grantType: 'authorization_code',
+
           redirectUri: process.env.AUTH_CALLBACK,
-        })
-        
-        console.log(token)
-        
+        });
+
+        console.log(token);
+
         const discordUser = await oauth.getUser(token.access_token);
-        
-        const user = await User.findOneAndUpdate({ "discordData.id": discordUser.id }, { $setOnInsert: { ...discordUser, discordData: { ...discordUser } } }, { new: true, upsert: true })
-        
-        
+
+        const user = await User.findOneAndUpdate({ 'discordData.id': discordUser.id }, { $setOnInsert: { ...discordUser, discordData: { ...discordUser } } }, { new: true, upsert: true });
+
         console.log({ token, user });
         return { token, user };
-      } return {}
-      },
+      } return {};
+    },
     async signIn(_, { token }) {
       const { id } = await oauth.getUser(token.access_token);
-      const user = await User.findOne({ "discordData.id": id }).populate("tracks").exec();
-      console.log(user)
+      const user = await User.findOne({ 'discordData.id': id }).populate('tracks').exec();
+      console.log(user);
       return user;
     },
     // TRACK : OK
     async tracks(_, { tag }) {
-      const tracks = await Track.find(tag ? { tags: tag } : {}).populate("creator").populate("tags").sort({ updatedAt: "desc" })
+      const tracks = await Track.find(tag ? { tags: tag } : {}).populate('creator').populate('tags').sort({ updatedAt: 'desc' })
         .exec();
       return tracks;
     },
     async track(_, { id }) {
-      const track = await Track.findById(id).populate("creator").populate("tags").exec();
+      const track = await Track.findById(id).populate('creator').populate('tags').exec();
       return track;
     },
     // TAG : OK
     async tags() {
-      const tags = await Tag.find().populate("creator").populate("tracks").populate("tracks.tags").exec();
+      const tags = await Tag.find().populate('creator').populate('tracks').populate('tracks.tags').exec();
       return tags;
     },
     async tag(_, { id }) {
-      const tag = await Tag.findById(id).populate("creator").populate("tracks").populate("tracks.tags").exec();
+      const tag = await Tag.findById(id).populate('creator').populate('tracks').populate('tracks.tags').exec();
       return tag;
     },
     // USER : OK
     async users() {
-      const users = await User.find().sort({ updatedAt: "desc" }).populate("tracks").exec();
+      const users = await User.find().sort({ updatedAt: 'desc' }).populate('tracks').exec();
       return users;
     },
     async user(_, { id }) {
-      const user = await User.findById(id).populate("tracks").exec();
+      const user = await User.findById(id).populate('tracks').exec();
       return user;
     },
     // GAME
     async games() {
       const games = await Game
         .find()
-        .populate("users")
-        .populate("tags")
-        .populate("history.song")
-        .populate("history.rank.player")
-        .sort("-createdAt")
+        .populate('users')
+        .populate('tags')
+        .populate('history.song')
+        .populate('history.rank.player')
+        .sort('-createdAt')
         .exec();
       return games;
     },
     async game(_, { id }) {
       const game = await Game
         .findById(id)
-        .populate("users")
-        .populate("tags")
-        .populate("history.track")
-        .populate("history.rank.player")
+        .populate('users')
+        .populate('tags')
+        .populate('history.track')
+        .populate('history.rank.player')
         .exec();
       return game;
     },
@@ -117,11 +117,11 @@ const resolvers = {
     async leaderboard(_, { id }) {
       const game = await Game
         .findById(id)
-        .populate("users")
-        .populate("tags")
-        .populate("history.track")
-        .populate("history.ranks")
-        .populate("history.ranks.user");
+        .populate('users')
+        .populate('tags')
+        .populate('history.track')
+        .populate('history.ranks')
+        .populate('history.ranks.user');
 
       const allRanks = game.history.map((round) => round.ranks).flat();
       if (allRanks.length <= 0) {
@@ -175,7 +175,7 @@ const resolvers = {
       try {
         const newTrack = await Track.create({ ...trackInput });
         // todo : add track in user
-        return newTrack.populate("creator").populate("tags").execPopulate();
+        return newTrack.populate('creator').populate('tags').execPopulate();
       } catch (error) {
         return error;
       }
@@ -213,7 +213,7 @@ const resolvers = {
       try {
         const newTag = await Tag.create({ ...tagInput });
         // todo : add tag in user
-        return newTag.populate("creator").populate("tracks").execPopulate();
+        return newTag.populate('creator').populate('tracks').execPopulate();
       } catch (error) {
         return error;
       }
@@ -232,7 +232,7 @@ const resolvers = {
     async createUser(_, { userInput }) {
       try {
         const newUser = await User.create({ ...userInput });
-        return newUser.populate("tracks").execPopulate();
+        return newUser.populate('tracks').execPopulate();
       } catch (error) {
         return error;
       }
@@ -294,7 +294,7 @@ const resolvers = {
     // OK
     async updateGameAddRank(_, { id, round, rankInput }) {
       try {
-        await Game.updateOne({ _id: id, "history.position": round }, { $addToSet: { "history.$.ranks": { ...rankInput } } }, { new: true }).exec();
+        await Game.updateOne({ _id: id, 'history.position': round }, { $addToSet: { 'history.$.ranks': { ...rankInput } } }, { new: true }).exec();
         const updatedGame = await Game.findById(id).exec();
         return updatedGame;
       } catch (error) {
@@ -302,28 +302,30 @@ const resolvers = {
       }
     },
     // UTILS
+    // Use to add users to a game
     async updateAndAdd(_, { id, userDiscordData }) {
       try {
-        const ids = userDiscordData.map((data) => data.id);
-        const u = await User.find({ discordId: { $in: ids } });
-        const dbUsersDiscordIds = u.map((user) => user.discordId);
-        const missingOnes = ids.filter((id) => !dbUsersDiscordIds.includes(id));
-        const newUsers = userDiscordData.filter((u) => missingOnes.includes(u.id));
-        await User.insertMany(newUsers.map(({ id, avatar, username }) => ({ discordId: id, avatar, username })));
-        await User.updateMany(
-          { discordId: { $in: userDiscordData.map((u) => u.id) } },
-          { $inc: { gamesCpt: 999 } },
-        );
-        const usersInGame = await User.find({ discordId: { $in: ids } });
-        const players = usersInGame.map((u) => u._id);
-        const updatedGame = await Game
-          .findByIdAndUpdate(id, {
-            $addToSet: { users: players },
-          }, { new: true })
-          .populate("users")
-          .populate("tags")
-          .populate("history.song")
-          .exec();
+        // Get discord id of user in game
+        const discordIds = userDiscordData.map((userInGame) => userInGame.id);
+
+        // Get all the existing user
+        const existingUsers = await User.find({ 'discordData.id': { $in: discordIds } });
+
+        const existingUsersDiscordIds = existingUsers.map((userDb) => userDb.discordData.id);
+
+        // Diff existing users and missing ones
+        const missingOnes = userDiscordData.filter(({ id }) => !existingUsersDiscordIds.includes(id));
+
+        // Insert misssings
+        const updateValues = missingOnes.map((missingOne) => ({ ...missingOne, discordData: { ...missingOne } }));
+        await User.insertMany(updateValues);
+
+        // Get all users
+        const users = await User.find({ 'discordData.id': { $in: discordIds } });
+
+        // Bind user in game
+        const updatedGame = await Game.findByIdAndUpdate(id, { $addToSet: { users } }, { new: true }).populate('users').populate('tags').populate('history.track').exec();
+
         return updatedGame;
       } catch (error) {
         return false;
@@ -335,7 +337,7 @@ const resolvers = {
         const tracks = await Track.insertMany(trackInputs.map((track) => ({ ...track, tags: [newTag._id] })));
         const tracksIds = tracks.reduce((acc, value) => [...acc, value._id], []);
         const updatedTag = await Tag.findByIdAndUpdate(newTag._id, { $addToSet: { tracks: tracksIds } }, { new: true }).exec();
-        return updatedTag.populate("tracks").populate("creator").execPopulate();
+        return updatedTag.populate('tracks').populate('creator').execPopulate();
       } catch (error) {
         return error;
       }

@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const tracksSchema = new mongoose.Schema({
   title: String,
@@ -13,10 +13,10 @@ const tracksSchema = new mongoose.Schema({
   answers: [String],
   keywords: [String],
   thumbnail: String,
-  creator: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  tags: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tag" }],
+  creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  tags: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Tag' }],
 }, { timestamps: true });
 
-const Track = mongoose.model("Track", tracksSchema);
+const Track = mongoose.model('Track', tracksSchema);
 
 module.exports = Track;
