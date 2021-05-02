@@ -126,8 +126,8 @@ const resolvers = {
         .find()
         .populate('users')
         .populate('tags')
-        .populate('history.song')
-        .populate('history.rank.player')
+        .populate('history.track')
+        .populate('history.ranks.user')
         .sort('-createdAt')
         .exec();
       return games;
@@ -138,7 +138,7 @@ const resolvers = {
         .populate('users')
         .populate('tags')
         .populate('history.track')
-        .populate('history.rank.player')
+        .populate('history.ranks.user')
         .exec();
       return game;
     },
