@@ -46,6 +46,23 @@ const typeDefs = gql`
     updatedAt: Date
   }
 
+  type Guild {
+    _id: ID,
+    isPlaying: Boolean,
+    users: [User],
+    id: String,
+    name: String,
+    icon: String,
+    region: String,
+    memberCount: Int,
+    premiumTier: Int,
+    premiumSubscriptionCount: Int,
+    joinedTimestamp: Date,
+    maximumMembers: Int,
+    preferredLocale: String,
+    ownerID: String,
+  }
+
   type DiscordUserPayload {
     id: String,
     username: String,
@@ -130,7 +147,7 @@ const typeDefs = gql`
     username: String,
     avatar: String
   }
-
+  
   input trackInput {
     title: String,
     videoUrl: String,
@@ -150,6 +167,20 @@ const typeDefs = gql`
     thumbnail: String,
     tracks: [ID],
     creator: ID,
+  }
+
+  input guildInput {
+    id: String,
+    name: String,
+    icon: String,
+    region: String,
+    memberCount: Int,
+    premiumTier: Int,
+    premiumSubscriptionCount: Int,
+    joinedTimestamp: Date,
+    maximumMembers: Int,
+    preferredLocale: String,
+    ownerID: String,
   }
 
   input userInput {
@@ -177,17 +208,13 @@ const typeDefs = gql`
     token_type: String
   }
 
-#   {
-#   access_token: 'lKND8I945IWyS1CwKwcZczEATjZu4Z',
-#   expires_in: 604800,
-#   refresh_token: 'OGy5LjC1GVTbih8EX1McAkkdYZaemK',
-#   scope: 'identify',
-#   token_type: 'Bearer'
-# }
-
   type Query {
     auth(code: String): AuthPayload
     signIn(token: discordToken): User
+
+    guilds: [Guild]
+    guild(id: ID): Guild
+    guildByGuildId(id: ID): Guild
 
     tracks(tag: ID): [Track]
     track(id: ID): Track
@@ -205,10 +232,15 @@ const typeDefs = gql`
 
     randomTrack(tag: ID): Track
 
+    playlistTracks(tag: ID): [Track]
+
     youtubeData(youtubeUrls: [String]): [YouTubeData]
   }
 
   type Mutation {
+    createGuild(guildInput: guildInput): Guild
+    updateGuildIsPlaying(id: ID, isPlaying: Boolean): Guild
+
     createTrack(trackInput: trackInput): Track
     createTracks(trackInputs: [trackInput]): [Track]
     deleteTrack(id: ID): Track

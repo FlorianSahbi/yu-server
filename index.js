@@ -9,6 +9,7 @@ require('./schemas/tagsSchema');
 require('./schemas/usersSchema');
 require('./schemas/roundsSchema');
 require('./schemas/ranksSchema');
+require('./schemas/guildsSchema');
 require('./schemas/discordUsersSchema');
 
 const typeDefs = require('./typeDefs');

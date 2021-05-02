@@ -9,10 +9,30 @@ const ytdl = require('ytdl-core');
 const { GraphQLScalarType, Kind } = require('graphql');
 const groupBy = require('./utils/groupBy');
 const Track = require('./schemas/tracksSchema');
+const Guild = require('./schemas/guildsSchema');
 const Game = require('./schemas/gamesSchema');
 const Tag = require('./schemas/tagsSchema');
 const User = require('./schemas/usersSchema');
 const getRandomIntInclusive = require('./utils/getRandomIntInclusive');
+
+function shuffle(array) {
+  let currentIndex = array.length; let temporaryValue; let
+    randomIndex;
+
+  // While there remain elements to shuffle...
+  while (currentIndex !== 0) {
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
 
 const dateScalar = new GraphQLScalarType({
   name: 'Date',
@@ -36,7 +56,6 @@ const resolvers = {
   Query: {
     async auth(_, { code }) {
       if (code) {
-        console.log(code, process.env.AUTH_CALLBACK, process.env.CLIENT_ID, process.env.CLIENT_SECRET);
         const token = await oauth.tokenRequest({
           clientId: process.env.CLIENT_ID,
           clientSecret: process.env.CLIENT_SECRET,
@@ -47,21 +66,31 @@ const resolvers = {
           redirectUri: process.env.AUTH_CALLBACK,
         });
 
-        console.log(token);
-
         const discordUser = await oauth.getUser(token.access_token);
 
         const user = await User.findOneAndUpdate({ 'discordData.id': discordUser.id }, { $setOnInsert: { ...discordUser, discordData: { ...discordUser } } }, { new: true, upsert: true });
 
-        console.log({ token, user });
         return { token, user };
       } return {};
     },
     async signIn(_, { token }) {
       const { id } = await oauth.getUser(token.access_token);
       const user = await User.findOne({ 'discordData.id': id }).populate('tracks').exec();
-      console.log(user);
       return user;
+    },
+    // GUILD : OK
+    async guilds() {
+      const guilds = await Guild.find({}).populate('users').populate('games').sort({ updatedAt: 'desc' })
+        .exec();
+      return guilds;
+    },
+    async guild(_, { id }) {
+      const guild = await Guild.findById(id).populate('users').populate('games').exec();
+      return guild;
+    },
+    async guildByGuildId(_, { id }) {
+      const guild = await Guild.findOne({ id }).populate('users').populate('games').exec();
+      return guild;
     },
     // TRACK : OK
     async tracks(_, { tag }) {
@@ -149,6 +178,14 @@ const resolvers = {
         return error;
       }
     },
+    async playlistTracks(_, { tag }) {
+      try {
+        const tracks = await Track.find({ tags: tag }).exec();
+        return shuffle(tracks);
+      } catch (error) {
+        return error;
+      }
+    },
     async youtubeData(_, { youtubeUrls }) {
       try {
         let promises = [];
@@ -170,6 +207,22 @@ const resolvers = {
     },
   },
   Mutation: {
+    async createGuild(_, { guildInput }) {
+      try {
+        const newGuild = await Guild.findOneAndUpdate({ id: guildInput.id }, { $setOnInsert: { ...guildInput } }, { new: true, upsert: true });
+        return newGuild.populate('users').populate('games').execPopulate();
+      } catch (error) {
+        return error;
+      }
+    },
+    async updateGuildIsPlaying(_, { id, isPlaying }) {
+      try {
+        const updatedGuild = await Guild.findOneAndUpdate({ id }, { isPlaying }, { new: true }).exec();
+        return updatedGuild;
+      } catch (error) {
+        return error;
+      }
+    },
     // TRACK : OK
     async createTrack(_, { trackInput }) {
       try {

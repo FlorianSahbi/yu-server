@@ -9,6 +9,7 @@ const gamesSchema = new mongoose.Schema({
   tags: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Tag' }],
   users: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  guild: { type: mongoose.Schema.Types.ObjectId, ref: 'Guild' },
   history: [roundsSchema],
 }, { timestamps: true });
 
