@@ -3,8 +3,6 @@ const mongoose = require('mongoose');
 
 const guildsSchema = new mongoose.Schema({
   isPlaying: { type: Boolean, default: false },
-  users: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  games: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Game' }],
   id: String,
   name: String,
   icon: String,
@@ -16,6 +14,8 @@ const guildsSchema = new mongoose.Schema({
   maximumMembers: Number,
   preferredLocale: String,
   ownerID: String,
+  users: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  games: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Game' }],
 }, { timestamps: true });
 
 const Guild = mongoose.model('Guild', guildsSchema);

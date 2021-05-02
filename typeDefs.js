@@ -39,9 +39,12 @@ const typeDefs = gql`
     username: String,
     avatar: String,
     email: String,
-    tracks: [Track],
     playCount: Int,
     discordData: DiscordUserPayload,
+    games: [Game]
+    tracks: [Track]
+    tags: [Tag]
+    guilds: [Guild]
     createdAt: Date,
     updatedAt: Date
   }
@@ -250,6 +253,10 @@ const typeDefs = gql`
 
     createUser(userInput: userInput): User
     deleteUser(id: ID): User
+    updateUserAddGame(id: ID, gameId: ID): User
+    updateUserAddTrack(id: ID, trackId: ID): User
+    updateUserAddTags(id: ID, tagId: ID): User
+    updateUserAddGuild(id: ID, guildId: ID): User
 
     createGame: Game
     deleteGame(id: ID): Game

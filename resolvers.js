@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 /* eslint-disable max-len */
 /* eslint-disable newline-per-chained-call */
 /* eslint-disable camelcase */
@@ -113,11 +114,11 @@ const resolvers = {
     },
     // USER : OK
     async users() {
-      const users = await User.find().sort({ updatedAt: 'desc' }).populate('tracks').exec();
+      const users = await User.find().sort({ updatedAt: 'desc' }).populate('games').populate('tracks').populate('tags').populate('guilds').exec();
       return users;
     },
     async user(_, { id }) {
-      const user = await User.findById(id).populate('tracks').exec();
+      const user = await User.findById(id).populate('games').populate('tracks').populate('tags').populate('guilds').exec();
       return user;
     },
     // GAME
@@ -299,6 +300,42 @@ const resolvers = {
         return error;
       }
     },
+    async updateUserAddGame(_, { id, gameId }) {
+      console.log({ id, gameId });
+      try {
+        const updatedUser = await User.findByIdAndUpdate(id, { $addToSet: { games: gameId } });
+        return updatedUser.populate('games').populate('tracks').populate('tags').populate('guilds').execPopulate();
+      } catch (error) {
+        return error;
+      }
+    },
+    async updateUserAddTrack(_, { id, trackId }) {
+      console.log({ id, trackId });
+      try {
+        const updatedUser = await User.findByIdAndUpdate(id, { $addToSet: { tracks: trackId } });
+        return updatedUser.populate('games').populate('tracks').populate('tags').populate('guilds').execPopulate();
+      } catch (error) {
+        return (error);
+      }
+    },
+    async updateUserAddTags(_, { id, tagId }) {
+      console.log({ id, tagId });
+      try {
+        const updatedUser = await User.findByIdAndUpdate(id, { $addToSet: { tags: tagId } });
+        return updatedUser;
+      } catch (error) {
+        return (error);
+      }
+    },
+    async updateUserAddGuild(_, { id, guildId }) {
+      console.log({ id, guildId });
+      try {
+        const updatedUser = await User.findByIdAndUpdate(id, { $addToSet: { guilds: guildId } });
+        return updatedUser;
+      } catch (error) {
+        return (error);
+      }
+    },
     // GAME : OK
     async createGame() {
       try {
@@ -385,10 +422,13 @@ const resolvers = {
       }
     },
     async createCustomPlaylist(_, { tagInput, trackInputs }) {
+      console.log(tagInput);
       try {
         const newTag = await Tag.create({ ...tagInput });
+        await await User.findByIdAndUpdate(tagInput.creator, { $addToSet: { tags: newTag._id } });
         const tracks = await Track.insertMany(trackInputs.map((track) => ({ ...track, tags: [newTag._id] })));
         const tracksIds = tracks.reduce((acc, value) => [...acc, value._id], []);
+        await User.findByIdAndUpdate(tagInput.creator, { $addToSet: { tracks: tracksIds } });
         const updatedTag = await Tag.findByIdAndUpdate(newTag._id, { $addToSet: { tracks: tracksIds } }, { new: true }).exec();
         return updatedTag.populate('tracks').populate('creator').execPopulate();
       } catch (error) {
