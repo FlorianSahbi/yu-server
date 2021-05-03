@@ -15,7 +15,7 @@ require('./schemas/discordUsersSchema');
 const typeDefs = require('./typeDefs');
 const resolvers = require('./resolvers');
 
-const uri = 'mongodb+srv://admin:admin@blind-test.bx9rj.mongodb.net/blind_test?retryWrites=true&w=majority';
+const uri = process.env.MONGO_URI;
 mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 const db = mongoose.connection;
 db.on('error', console.info.bind(console, 'connection error:'));
