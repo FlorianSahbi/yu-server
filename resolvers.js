@@ -275,8 +275,12 @@ const resolvers = {
     // OK
     async deleteTag(_, { id }) {
       try {
+        const tracks = await Track.find({ tags: { $in: id } });
+        const TrackToDeleteIds = tracks.reduce((acc, value) => [...acc, value._id], []);
+        await User.findById(tracks[0].creator);
+        await User.findByIdAndUpdate(tracks[0].creator, { $pull: { tags: id, tracks: { $in: TrackToDeleteIds } } }, { new: true });
+        await Track.deleteMany({ _id: TrackToDeleteIds });
         const deleteTag = await Tag.findByIdAndDelete(id);
-        // todo : delete track in user
         return deleteTag;
       } catch (error) {
         return error;
@@ -301,7 +305,6 @@ const resolvers = {
       }
     },
     async updateUserAddGame(_, { id, gameId }) {
-      console.log({ id, gameId });
       try {
         const updatedUser = await User.findByIdAndUpdate(id, { $addToSet: { games: gameId } });
         return updatedUser.populate('games').populate('tracks').populate('tags').populate('guilds').execPopulate();
@@ -310,7 +313,6 @@ const resolvers = {
       }
     },
     async updateUserAddTrack(_, { id, trackId }) {
-      console.log({ id, trackId });
       try {
         const updatedUser = await User.findByIdAndUpdate(id, { $addToSet: { tracks: trackId } });
         return updatedUser.populate('games').populate('tracks').populate('tags').populate('guilds').execPopulate();
