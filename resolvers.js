@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable max-len */
 /* eslint-disable newline-per-chained-call */
@@ -262,6 +263,14 @@ const resolvers = {
         return error;
       }
     },
+    async updateTrackIsUnlisted(_, { id, isUnlisted }) {
+      try {
+        const updatedTrack = await Track.findByIdAndUpdate(id, { isUnlisted }, { new: true }).exec();
+        return updatedTrack;
+      } catch (error) {
+        return error;
+      }
+    },
     // TAG : OK
     async createTag(_, { tagInput }) {
       try {
@@ -321,7 +330,6 @@ const resolvers = {
       }
     },
     async updateUserAddTags(_, { id, tagId }) {
-      console.log({ id, tagId });
       try {
         const updatedUser = await User.findByIdAndUpdate(id, { $addToSet: { tags: tagId } });
         return updatedUser;
@@ -330,7 +338,6 @@ const resolvers = {
       }
     },
     async updateUserAddGuild(_, { id, guildId }) {
-      console.log({ id, guildId });
       try {
         const updatedUser = await User.findByIdAndUpdate(id, { $addToSet: { guilds: guildId } });
         return updatedUser;
@@ -424,7 +431,6 @@ const resolvers = {
       }
     },
     async createCustomPlaylist(_, { tagInput, trackInputs }) {
-      console.log(tagInput);
       try {
         const newTag = await Tag.create({ ...tagInput });
         await await User.findByIdAndUpdate(tagInput.creator, { $addToSet: { tags: newTag._id } });

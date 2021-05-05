@@ -9,6 +9,7 @@ const typeDefs = gql`
     videoUrl: String,
     videoId: String,
     playCount: Int,
+    isUnlisted: Boolean,
     lengthSeconds: String,
     category: String,
     ownerChannelName: String,
@@ -247,6 +248,7 @@ const typeDefs = gql`
     createTrack(trackInput: trackInput): Track
     createTracks(trackInputs: [trackInput]): [Track]
     deleteTrack(id: ID): Track
+    updateTrackIsUnlisted(id: ID, isUnlisted: Boolean): Track
 
     createTag(tagInput: tagInput): Tag
     deleteTag(id: ID): Tag
