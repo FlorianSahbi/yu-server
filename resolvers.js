@@ -191,10 +191,12 @@ const resolvers = {
     async youtubeData(_, { youtubeUrls }) {
       try {
         let promises = [];
+        console.log(promises);
         youtubeUrls.forEach((u) => {
           promises = [...promises, ytdl.getInfo(u)];
         });
         const values = await Promise.all(promises);
+        console.log(values);
         const data = await values.map(({
           videoDetails: {
             title, keywords, video_url, thumbnails, lengthSeconds, category, ownerChannelName, videoId,
@@ -202,8 +204,10 @@ const resolvers = {
         }) => ({
           title, keywords, videoUrl: video_url, thumbnails, lengthSeconds, category, ownerChannelName, videoId,
         }));
+        console.log(data);
         return data;
       } catch (error) {
+        console.log(error);
         return error;
       }
     },
