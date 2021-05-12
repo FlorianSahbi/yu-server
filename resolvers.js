@@ -447,6 +447,19 @@ const resolvers = {
         return error;
       }
     },
+    async addTracksToTags(_, { id, trackInputs }) {
+      try {
+        await await User.findById(trackInputs[0].creator);
+        const tracks = await Track.insertMany(trackInputs.map((track) => ({ ...track, tags: [id] })));
+        const tracksIds = tracks.reduce((acc, value) => [...acc, value._id], []);
+        await User.findByIdAndUpdate(trackInputs[0].creator, { $addToSet: { tracks: tracksIds } });
+        const updatedTag = await Tag.findByIdAndUpdate(id, { $addToSet: { tracks: tracksIds } }, { new: true }).exec();
+        return updatedTag.populate('tracks').populate('creator').execPopulate();
+      } catch (error) {
+        console.log(error);
+        return error;
+      }
+    },
   },
 };
 

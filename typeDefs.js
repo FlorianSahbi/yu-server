@@ -268,6 +268,7 @@ const typeDefs = gql`
     updateGameAddRank(id: ID, round: Int, rankInput: rankInput): Game
 
     createCustomPlaylist(tagInput: tagInput, trackInputs: [trackInput]): Tag
+    addTracksToTags(id: ID, trackInputs: [trackInput]): Tag
     createUserWithDiscordId(discordId: String): User
     updateAndAdd(id: ID, userDiscordData: [userDiscordData], ): Game
     acceptTrack(id: ID): Track
