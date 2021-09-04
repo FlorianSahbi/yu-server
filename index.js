@@ -16,7 +16,7 @@ const typeDefs = require('./typeDefs');
 const resolvers = require('./resolvers');
 
 const uri = process.env.MONGO_URI;
-mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false });
 const db = mongoose.connection;
 db.on('error', console.info.bind(console, 'connection error:'));
 db.once('open', () => console.info('DB Connected'));

@@ -43,6 +43,7 @@ const typeDefs = gql`
     playCount: Int,
     discordData: DiscordUserPayload,
     games: [Game]
+    roles: [String],
     tracks: [Track]
     tags: [Tag]
     guilds: [Guild]
@@ -54,6 +55,7 @@ const typeDefs = gql`
     _id: ID,
     isPlaying: Boolean,
     users: [User],
+    games: [Game],
     id: String,
     name: String,
     icon: String,
@@ -97,6 +99,7 @@ const typeDefs = gql`
     _id: ID,
     name: String,
     goal: Int,
+    mod: String,
     trackTime: Int,
     tags: [Tag],
     users: [User],
@@ -153,6 +156,7 @@ const typeDefs = gql`
   }
   
   input trackInput {
+    _id: ID,
     title: String,
     videoUrl: String,
     videoId: String,
@@ -164,6 +168,7 @@ const typeDefs = gql`
     keywords: [String],
     creator: ID,
     tags: [ID],
+    isNew: Boolean,
   }
 
   input tagInput {
@@ -218,19 +223,25 @@ const typeDefs = gql`
 
     guilds: [Guild]
     guild(id: ID): Guild
-    guildByGuildId(id: ID): Guild
+    guildByGuildId(id: ID): Guild 
+    guildByDiscordId(id: ID): Guild 
 
-    tracks(tag: ID): [Track]
+    tracks(tag: ID, title: String): [Track]
+    lastTracks: [Track]
     track(id: ID): Track
 
     tags: [Tag]
+    tagsByUser(discordId: ID): [Tag]
     tag(id: ID): Tag
 
     games: [Game]
+    lastGames: [Game]
     game(id: ID): Game
 
     users: [User]
+    lastUsers: [User]
     user(id: ID): User
+    userByDiscordId(id: ID): User
 
     leaderboard(id: ID): [Leaderboard]
 
@@ -239,18 +250,23 @@ const typeDefs = gql`
     playlistTracks(tag: ID): [Track]
 
     youtubeData(youtubeUrls: [String]): [YouTubeData]
+    youtubeTrack(youtubeUrl: String): YouTubeData
   }
 
   type Mutation {
     createGuild(guildInput: guildInput): Guild
     updateGuildIsPlaying(id: ID, isPlaying: Boolean): Guild
+    updateGuildAddUsers(id: ID, users: [ID]): Guild
+    updateGuildAddGame(id: ID, gameId: ID): Guild
 
     createTrack(trackInput: trackInput): Track
     createTracks(trackInputs: [trackInput]): [Track]
+    updateTrack(id: ID, trackInput: trackInput): Track
     deleteTrack(id: ID): Track
     updateTrackIsUnlisted(id: ID, isUnlisted: Boolean): Track
 
     createTag(tagInput: tagInput): Tag
+    updateTag(id: ID, tagInput: tagInput, ): Tag
     deleteTag(id: ID): Tag
 
     createUser(userInput: userInput): User
@@ -263,6 +279,7 @@ const typeDefs = gql`
     createGame: Game
     deleteGame(id: ID): Game
     updateGameAddPlayers(id: ID, users: [ID]): Game
+    updateGameAddMod(id: ID, mod: String): Game
     updateGameAddTags(id: ID, tags: [ID]): Game
     updateGameAddRound( id: ID, roundInput: roundInput): Game
     updateGameAddRank(id: ID, round: Int, rankInput: rankInput): Game

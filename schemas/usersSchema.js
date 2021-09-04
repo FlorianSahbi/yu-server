@@ -7,6 +7,7 @@ const usersSchema = new mongoose.Schema({
   email: String,
   playCount: { type: Number, default: 0 },
   discordData: discordUsersSchema,
+  roles: [String],
   games: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Game' }],
   tracks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Track' }],
   tags: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Tag' }],

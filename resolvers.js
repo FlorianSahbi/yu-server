@@ -80,7 +80,6 @@ const resolvers = {
       const user = await User.findOne({ 'discordData.id': id }).populate('tracks').exec();
       return user;
     },
-    // GUILD : OK
     async guilds() {
       const guilds = await Guild.find({}).populate('users').populate('games').sort({ updatedAt: 'desc' })
         .exec();
@@ -94,35 +93,87 @@ const resolvers = {
       const guild = await Guild.findOne({ id }).populate('users').populate('games').exec();
       return guild;
     },
-    // TRACK : OK
-    async tracks(_, { tag }) {
-      const tracks = await Track.find(tag ? { tags: tag } : {}).populate('creator').populate('tags').sort({ updatedAt: 'desc' })
-        .exec();
+    async guildByDiscordId(_, { id }) {
+      const guild = await Guild.findOne({ id }).populate('users').populate('games').exec();
+      return guild;
+    },
+    async tracks(_, { tag, title }) {
+      function filter() {
+        if (tag) {
+          return { tags: tag };
+        }
+        if (title) {
+          return { title: { $regex: title, $options: 'i' } };
+        }
+        return {};
+      }
+
+      const tracks = await Track.find(filter()).populate('creator').populate('tags').sort({ updatedAt: 'desc' }).exec();
+      return tracks;
+    },
+    async lastTracks() {
+      const tracks = await Track.find({}).sort({ updatedAt: 'desc' }).limit(12).populate('creator').populate('tags').sort({ updatedAt: 'desc' }).exec();
       return tracks;
     },
     async track(_, { id }) {
       const track = await Track.findById(id).populate('creator').populate('tags').exec();
       return track;
     },
-    // TAG : OK
     async tags() {
       const tags = await Tag.find().populate('creator').populate('tracks').populate('tracks.tags').exec();
+      return tags;
+    },
+    async tagsByUser(_, { discordId }) {
+      let tags = [];
+      const user = await User.findOne({ 'discordData.id': discordId }).populate('games').populate('tracks').populate('tags').populate('guilds').exec();
+
+      if (user.roles.includes('ADMINISTRATOR')) {
+        tags = await Tag.find({}).sort({ name: 'ASC' }).populate('creator').populate('tracks').populate('tracks.tags').exec();
+      } else if (user.roles.includes('PREMIUM')) {
+        const genericTags = await Tag.find({ isCustom: false }).sort({ name: 'ASC' }).populate('creator').populate('tracks').populate('tracks.tags').exec();
+        const customTags = await Tag.find({ isCustom: true, creator: user._id }).sort({ name: 'ASC' }).populate('creator').populate('tracks').populate('tracks.tags').exec();
+        tags = [...genericTags, ...customTags];
+      } else {
+        tags = await Tag.find({ isCustom: false }).sort({ name: 'ASC' }).populate('creator').populate('tracks').populate('tracks.tags').exec();
+      }
       return tags;
     },
     async tag(_, { id }) {
       const tag = await Tag.findById(id).populate('creator').populate('tracks').populate('tracks.tags').exec();
       return tag;
     },
-    // USER : OK
     async users() {
-      const users = await User.find().sort({ updatedAt: 'desc' }).populate('games').populate('tracks').populate('tags').populate('guilds').exec();
+      const users = await User
+        .find()
+        .sort({ updatedAt: 'desc' })
+        .populate('games')
+        .populate('tracks')
+        .populate('tags')
+        .populate('guilds')
+        .exec();
+      return users;
+    },
+    async lastUsers() {
+      const users = await User
+        .find({})
+        .sort({ updatedAt: 'desc' })
+        .limit(12)
+        .populate('games')
+        .populate('tracks')
+        .populate('tags')
+        .populate('guilds')
+        .sort({ createdAt: 'desc' })
+        .exec();
       return users;
     },
     async user(_, { id }) {
       const user = await User.findById(id).populate('games').populate('tracks').populate('tags').populate('guilds').exec();
       return user;
     },
-    // GAME
+    async userByDiscordId(_, { id }) {
+      const user = await User.findOne({ 'discordData.id': id }).populate('games').populate('tracks').populate('tags').populate('guilds').exec();
+      return user;
+    },
     async games() {
       const games = await Game
         .find()
@@ -144,7 +195,19 @@ const resolvers = {
         .exec();
       return game;
     },
-    // UTILS
+    async lastGames() {
+      const games = await Game
+        .find({})
+        .sort({ updatedAt: 'desc' })
+        .limit(12).populate('creator')
+        .populate('users')
+        .populate('tags')
+        .populate('history.track')
+        .populate('history.ranks.user')
+        .sort({ updatedAt: 'desc' })
+        .exec();
+      return games;
+    },
     async leaderboard(_, { id }) {
       const game = await Game
         .findById(id)
@@ -191,12 +254,10 @@ const resolvers = {
     async youtubeData(_, { youtubeUrls }) {
       try {
         let promises = [];
-        console.log(promises);
         youtubeUrls.forEach((u) => {
           promises = [...promises, ytdl.getInfo(u)];
         });
         const values = await Promise.all(promises);
-        console.log(values);
         const data = await values.map(({
           videoDetails: {
             title, keywords, video_url, thumbnails, lengthSeconds, category, ownerChannelName, videoId,
@@ -207,7 +268,26 @@ const resolvers = {
         console.log(data);
         return data;
       } catch (error) {
-        console.log(error);
+        return error;
+      }
+    },
+    async youtubeTrack(_, { youtubeUrl }) {
+      const existingTrack = await Track.findOne({ videoUrl: youtubeUrl });
+
+      if (existingTrack) {
+        return null;
+      }
+      try {
+        const value = await ytdl.getInfo(youtubeUrl);
+        const {
+          title, keywords, video_url, thumbnails, lengthSeconds, category, ownerChannelName, videoId,
+        } = value.videoDetails;
+
+        const data = {
+          title, keywords, videoUrl: video_url, thumbnails, lengthSeconds, category, ownerChannelName, videoId,
+        };
+        return data;
+      } catch (error) {
         return error;
       }
     },
@@ -229,7 +309,22 @@ const resolvers = {
         return error;
       }
     },
-    // TRACK : OK
+    async updateGuildAddUsers(_, { id, users }) {
+      try {
+        const updatedGuild = await Guild.findByIdAndUpdate(id, { $addToSet: { users } }, { new: true });
+        return updatedGuild.populate('users').populate('games').execPopulate();
+      } catch (error) {
+        return error;
+      }
+    },
+    async updateGuildAddGame(_, { id, gameId }) {
+      try {
+        const updatedGuild = await Guild.findByIdAndUpdate(id, { $addToSet: { games: gameId } });
+        return updatedGuild.populate('users').populate('games').execPopulate();
+      } catch (error) {
+        return error;
+      }
+    },
     async createTrack(_, { trackInput }) {
       try {
         const newTrack = await Track.create({ ...trackInput });
@@ -248,7 +343,14 @@ const resolvers = {
         return error;
       }
     },
-    // OK
+    async updateTrack(_, { id, trackInput }) {
+      try {
+        const updatedTrack = await Track.findByIdAndUpdate(id, trackInput, { new: true });
+        return updatedTrack.populate('tag').execPopulate();
+      } catch (error) {
+        return error;
+      }
+    },
     async deleteTrack(_, { id }) {
       try {
         const deletedTrack = await Track.findByIdAndDelete(id);
@@ -258,7 +360,6 @@ const resolvers = {
         return error;
       }
     },
-    // TRACK UTILS : OK
     async acceptTrack(_, { id }) {
       try {
         const updatedTrack = await Track.findByIdAndUpdate(id, { isAccepted: true }, { new: true }).exec();
@@ -275,7 +376,6 @@ const resolvers = {
         return error;
       }
     },
-    // TAG : OK
     async createTag(_, { tagInput }) {
       try {
         const newTag = await Tag.create({ ...tagInput });
@@ -285,21 +385,33 @@ const resolvers = {
         return error;
       }
     },
-    // OK
+    async updateTag(_, { id, tagInput }) {
+      try {
+        // const updatedTag = await Tag.findByIdAndUpdate(id, { $addToSet: { games: gameId } });
+        const tag = await Tag.findById(id);
+        console.log(tag);
+        console.log(tagInput);
+        return {};
+        // return updatedUser.populate('games').populate('tracks').populate('tags').populate('guilds').execPopulate();
+      } catch (error) {
+        return error;
+      }
+    },
     async deleteTag(_, { id }) {
       try {
         const tracks = await Track.find({ tags: { $in: id } });
-        const TrackToDeleteIds = tracks.reduce((acc, value) => [...acc, value._id], []);
-        await User.findById(tracks[0].creator);
-        await User.findByIdAndUpdate(tracks[0].creator, { $pull: { tags: id, tracks: { $in: TrackToDeleteIds } } }, { new: true });
-        await Track.deleteMany({ _id: TrackToDeleteIds });
+        if (tracks.length > 0 && tracks[0].creator) {
+          const TrackToDeleteIds = tracks.reduce((acc, value) => [...acc, value._id], []);
+          await User.findById(tracks[0].creator);
+          await User.findByIdAndUpdate(tracks[0].creator, { $pull: { tags: id, tracks: { $in: TrackToDeleteIds } } }, { new: true });
+          await Track.deleteMany({ _id: TrackToDeleteIds });
+        }
         const deleteTag = await Tag.findByIdAndDelete(id);
         return deleteTag;
       } catch (error) {
         return error;
       }
     },
-    // USER : OK
     async createUser(_, { userInput }) {
       try {
         const newUser = await User.create({ ...userInput });
@@ -308,7 +420,6 @@ const resolvers = {
         return error;
       }
     },
-    // OK
     async deleteUser(_, { id }) {
       try {
         const deletedUser = await User.findByIdAndDelete(id);
@@ -349,7 +460,6 @@ const resolvers = {
         return (error);
       }
     },
-    // GAME : OK
     async createGame() {
       try {
         const newGame = await Game.create({});
@@ -358,7 +468,6 @@ const resolvers = {
         return error;
       }
     },
-    // OK
     async deleteGame(_, { id }) {
       try {
         const deletedGame = await Game.findByIdAndDelete(id);
@@ -367,7 +476,6 @@ const resolvers = {
         return error;
       }
     },
-    // OK
     async updateGameAddPlayers(_, { id, users }) {
       try {
         const updatedGame = await Game.findByIdAndUpdate(id, { $addToSet: { users } }, { new: true }).exec();
@@ -376,7 +484,14 @@ const resolvers = {
         return error;
       }
     },
-    // OK
+    async updateGameAddMod(_, { id, mod }) {
+      try {
+        const updatedGame = await Game.findByIdAndUpdate(id, { mod }, { new: true }).exec();
+        return updatedGame;
+      } catch (error) {
+        return error;
+      }
+    },
     async updateGameAddTags(_, { id, tags }) {
       try {
         const updatedGame = await Game.findByIdAndUpdate(id, { $addToSet: { tags } }, { new: true }).exec();
@@ -385,7 +500,6 @@ const resolvers = {
         return error;
       }
     },
-    // OK
     async updateGameAddRound(_, { id, roundInput }) {
       try {
         const updatedGame = await Game.findByIdAndUpdate(id, { $addToSet: { history: { ...roundInput } } }, { new: true }).exec();
@@ -394,7 +508,6 @@ const resolvers = {
         return error;
       }
     },
-    // OK
     async updateGameAddRank(_, { id, round, rankInput }) {
       try {
         await Game.updateOne({ _id: id, 'history.position': round }, { $addToSet: { 'history.$.ranks': { ...rankInput } } }, { new: true }).exec();
@@ -404,8 +517,6 @@ const resolvers = {
         return error;
       }
     },
-    // UTILS
-    // Use to add users to a game
     async updateAndAdd(_, { id, userDiscordData }) {
       try {
         // Get discord id of user in game
@@ -435,11 +546,16 @@ const resolvers = {
       }
     },
     async createCustomPlaylist(_, { tagInput, trackInputs }) {
+      console.log('1', trackInputs);
+      let tracksIds = [];
+      const existingTracks = trackInputs.filter((track) => track.isNew === false);
       try {
         const newTag = await Tag.create({ ...tagInput });
-        await await User.findByIdAndUpdate(tagInput.creator, { $addToSet: { tags: newTag._id } });
-        const tracks = await Track.insertMany(trackInputs.map((track) => ({ ...track, tags: [newTag._id] })));
-        const tracksIds = tracks.reduce((acc, value) => [...acc, value._id], []);
+        await User.findByIdAndUpdate(tagInput.creator, { $addToSet: { tags: newTag._id } });
+        const newTracks = await Track.insertMany(trackInputs.filter((track) => track.isNew === true).map((track) => ({ ...track, tags: [newTag._id] })));
+        console.log('1.5', newTracks);
+        tracksIds = [...existingTracks.reduce((acc, value) => [...acc, value._id], []), ...newTracks.reduce((acc, value) => [...acc, value._id], [])];
+        console.log('2', tracksIds);
         await User.findByIdAndUpdate(tagInput.creator, { $addToSet: { tracks: tracksIds } });
         const updatedTag = await Tag.findByIdAndUpdate(newTag._id, { $addToSet: { tracks: tracksIds } }, { new: true }).exec();
         return updatedTag.populate('tracks').populate('creator').execPopulate();
@@ -456,7 +572,6 @@ const resolvers = {
         const updatedTag = await Tag.findByIdAndUpdate(id, { $addToSet: { tracks: tracksIds } }, { new: true }).exec();
         return updatedTag.populate('tracks').populate('creator').execPopulate();
       } catch (error) {
-        console.log(error);
         return error;
       }
     },
