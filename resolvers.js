@@ -272,13 +272,14 @@ const resolvers = {
         }) => ({
           title, keywords, videoUrl: video_url, thumbnails, lengthSeconds, category, ownerChannelName, videoId,
         }));
-        console.log(data);
         return data;
       } catch (error) {
         return error;
       }
     },
     async youtubeTrack(_, { youtubeUrl }) {
+      console.log('Proc Youtube URL');
+      console.log(youtubeUrl);
       const existingTrack = await Track.findOne({ videoUrl: youtubeUrl });
 
       if (existingTrack) {
@@ -396,8 +397,6 @@ const resolvers = {
       try {
         // const updatedTag = await Tag.findByIdAndUpdate(id, { $addToSet: { games: gameId } });
         const tag = await Tag.findById(id);
-        console.log(tag);
-        console.log(tagInput);
         return {};
         // return updatedUser.populate('games').populate('tracks').populate('tags').populate('guilds').execPopulate();
       } catch (error) {
@@ -553,16 +552,13 @@ const resolvers = {
       }
     },
     async createCustomPlaylist(_, { tagInput, trackInputs }) {
-      console.log('1', trackInputs);
       let tracksIds = [];
       const existingTracks = trackInputs.filter((track) => track.isNew === false);
       try {
         const newTag = await Tag.create({ ...tagInput });
         await User.findByIdAndUpdate(tagInput.creator, { $addToSet: { tags: newTag._id } });
         const newTracks = await Track.insertMany(trackInputs.filter((track) => track.isNew === true).map((track) => ({ ...track, tags: [newTag._id] })));
-        console.log('1.5', newTracks);
         tracksIds = [...existingTracks.reduce((acc, value) => [...acc, value._id], []), ...newTracks.reduce((acc, value) => [...acc, value._id], [])];
-        console.log('2', tracksIds);
         await User.findByIdAndUpdate(tagInput.creator, { $addToSet: { tracks: tracksIds } });
         const updatedTag = await Tag.findByIdAndUpdate(newTag._id, { $addToSet: { tracks: tracksIds } }, { new: true }).exec();
         return updatedTag.populate('tracks').populate('creator').execPopulate();
