@@ -97,7 +97,7 @@ const resolvers = {
       const guild = await Guild.findOne({ id }).populate('users').populate('games').exec();
       return guild;
     },
-    async tracks(_, { tag, title }) {
+    async tracks(_, { tag, title, limit }) {
       function filter() {
         if (tag) {
           return { tags: tag };
@@ -108,7 +108,14 @@ const resolvers = {
         return {};
       }
 
-      const tracks = await Track.find(filter()).populate('creator').populate('tags').sort({ updatedAt: 'desc' }).exec();
+      function size() {
+        if (limit) {
+          return limit;
+        }
+        return 0;
+      }
+
+      const tracks = await Track.find(filter()).populate('creator').populate('tags').sort({ updatedAt: 'desc' }).limit(size()).exec();
       return tracks;
     },
     async lastTracks() {

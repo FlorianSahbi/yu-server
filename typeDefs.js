@@ -226,7 +226,7 @@ const typeDefs = gql`
     guildByGuildId(id: ID): Guild 
     guildByDiscordId(id: ID): Guild 
 
-    tracks(tag: ID, title: String): [Track]
+    tracks(tag: ID, title: String, limit: Int): [Track]
     lastTracks: [Track]
     track(id: ID): Track
 
