@@ -387,7 +387,6 @@ const resolvers = {
     async createTag(_, { tagInput }) {
       try {
         const newTag = await Tag.create({ ...tagInput });
-        // todo : add tag in user
         return newTag.populate('creator').populate('tracks').execPopulate();
       } catch (error) {
         return error;
@@ -395,10 +394,8 @@ const resolvers = {
     },
     async updateTag(_, { id, tagInput }) {
       try {
-        // const updatedTag = await Tag.findByIdAndUpdate(id, { $addToSet: { games: gameId } });
-        const tag = await Tag.findById(id);
-        return {};
-        // return updatedUser.populate('games').populate('tracks').populate('tags').populate('guilds').execPopulate();
+        const updatedTag = await Tag.findByIdAndUpdate(id, tagInput, { new: true });
+        return updatedTag.populate('creator').populate('tracks').execPopulate();
       } catch (error) {
         return error;
       }
