@@ -227,19 +227,16 @@ const typeDefs = gql`
     guildByDiscordId(id: ID): Guild 
 
     tracks(tag: ID, title: String, limit: Int): [Track]
-    lastTracks: [Track]
     track(id: ID): Track
 
-    tags: [Tag]
+    tags(limit: Int): [Tag]
     tagsByUser(discordId: ID): [Tag]
     tag(id: ID): Tag
 
     games: [Game]
-    lastGames: [Game]
     game(id: ID): Game
 
-    users: [User]
-    lastUsers: [User]
+    users(limit: Int): [User]
     user(id: ID): User
     userByDiscordId(id: ID): User
 
@@ -264,10 +261,13 @@ const typeDefs = gql`
     updateTrack(id: ID, trackInput: trackInput): Track
     deleteTrack(id: ID): Track
     updateTrackIsUnlisted(id: ID, isUnlisted: Boolean): Track
+    updateTracksThumbnail(id:ID, thumbnail: String): Tag
 
     createTag(tagInput: tagInput): Tag
     updateTag(id: ID, tagInput: tagInput, ): Tag
+    updateTracksAddTag(id: ID, tagToAddId: ID): Tag
     deleteTag(id: ID): Tag
+    updateTagThumbnail(id:ID, thumbnail: String): Tag
 
     createUser(userInput: userInput): User
     deleteUser(id: ID): User

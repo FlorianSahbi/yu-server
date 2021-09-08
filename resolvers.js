@@ -118,16 +118,19 @@ const resolvers = {
       const tracks = await Track.find(filter()).populate('creator').populate('tags').sort({ updatedAt: 'desc' }).limit(size()).exec();
       return tracks;
     },
-    async lastTracks() {
-      const tracks = await Track.find({}).sort({ updatedAt: 'desc' }).limit(12).populate('creator').populate('tags').sort({ updatedAt: 'desc' }).exec();
-      return tracks;
-    },
     async track(_, { id }) {
       const track = await Track.findById(id).populate('creator').populate('tags').exec();
       return track;
     },
-    async tags() {
-      const tags = await Tag.find().populate('creator').populate('tracks').populate('tracks.tags').exec();
+    async tags(_, { limit }) {
+      function size() {
+        if (limit) {
+          return limit;
+        }
+        return 0;
+      }
+
+      const tags = await Tag.find().populate('creator').populate('tracks').populate('tracks.tags').limit(size()).exec();
       return tags;
     },
     async tagsByUser(_, { discordId }) {
@@ -149,7 +152,14 @@ const resolvers = {
       const tag = await Tag.findById(id).populate('creator').populate('tracks').populate('tracks.tags').exec();
       return tag;
     },
-    async users() {
+    async users(_, { limit }) {
+      function size() {
+        if (limit) {
+          return limit;
+        }
+        return 0;
+      }
+
       const users = await User
         .find()
         .sort({ updatedAt: 'desc' })
@@ -157,19 +167,7 @@ const resolvers = {
         .populate('tracks')
         .populate('tags')
         .populate('guilds')
-        .exec();
-      return users;
-    },
-    async lastUsers() {
-      const users = await User
-        .find({})
-        .sort({ updatedAt: 'desc' })
-        .limit(12)
-        .populate('games')
-        .populate('tracks')
-        .populate('tags')
-        .populate('guilds')
-        .sort({ createdAt: 'desc' })
+        .limit(size())
         .exec();
       return users;
     },
@@ -201,19 +199,6 @@ const resolvers = {
         .populate('history.ranks.user')
         .exec();
       return game;
-    },
-    async lastGames() {
-      const games = await Game
-        .find({})
-        .sort({ updatedAt: 'desc' })
-        .limit(12).populate('creator')
-        .populate('users')
-        .populate('tags')
-        .populate('history.track')
-        .populate('history.ranks.user')
-        .sort({ updatedAt: 'desc' })
-        .exec();
-      return games;
     },
     async leaderboard(_, { id }) {
       const game = await Game
@@ -301,6 +286,43 @@ const resolvers = {
     },
   },
   Mutation: {
+    async updateTracksThumbnail(_, { id, thumbnail }) {
+      try {
+        const tag = await Tag.findOne({ _id: id });
+        const trackIds = tag.tracks;
+
+        // Get all current tracks of our current tag and link them to our new tag
+        // each Track now link to tag
+        await Track.updateMany({ _id: { $in: trackIds } }, { thumbnail });
+        return tag;
+      } catch (error) {
+        return (error);
+      }
+    },
+    async updateTagThumbnail(_, { id, thumbnail }) {
+      try {
+        const tag = await Tag.findOneAndUpdate({ _id: id }, { thumbnail });
+        return tag;
+      } catch (error) {
+        return (error);
+      }
+    },
+    async updateTracksAddTag(_, { id, tagToAddId }) {
+      try {
+        const tag = await Tag.findOne({ _id: id });
+        const trackIds = tag.tracks;
+
+        // Get our current tag and update it with all our song id
+        await Tag.findByIdAndUpdate(tagToAddId, { $addToSet: { tracks: trackIds } });
+
+        // Get all current tracks of our current tag and link them to our new tag
+        // each Track now link to tag
+        await Track.updateMany({ _id: { $in: trackIds } }, { $addToSet: { tags: tagToAddId } });
+        return tag;
+      } catch (error) {
+        return (error);
+      }
+    },
     async createGuild(_, { guildInput }) {
       try {
         const newGuild = await Guild.findOneAndUpdate({ id: guildInput.id }, { $setOnInsert: { ...guildInput } }, { new: true, upsert: true });
